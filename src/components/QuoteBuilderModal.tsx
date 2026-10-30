@@ -239,12 +239,12 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
       <div className="modal-content" style={{ maxWidth: previewMode ? 860 : 800 }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FileText size={22} color="#F59E0B" />
+            <FileText size={22} color="var(--primary)" />
             <div>
-              <h3 style={{ fontSize: 18, color: '#FFF' }}>
+              <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
                 {previewMode ? 'Предпросмотр КП (Бланк A4)' : 'Конструктор коммерческого предложения (КП)'}
               </h3>
-              <p style={{ fontSize: 12, color: '#94A3B8' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                 {currentDeal ? `Сделка: ${currentDeal.title}` : 'Расчет тиражей и стоимости'}
               </p>
             </div>
@@ -256,7 +256,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
             >
               {previewMode ? 'Вернуться к редактору' : 'Печать / Предпросмотр'}
             </button>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <X size={20} />
             </button>
           </div>
@@ -410,7 +410,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
             {/* Секция позиций товаров */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h4 style={{ fontSize: 14, color: '#FFF' }}>1. Выбор упаковки и тиражей</h4>
+                <h4 style={{ fontSize: 14, color: 'var(--text-main)' }}>1. Выбор упаковки и тиражей</h4>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
@@ -426,9 +426,9 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                   <div
                     key={idx}
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
+                      background: '#F8FAFC',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 10,
+                      borderRadius: 'var(--radius-sm)',
                       padding: 14,
                     }}
                   >
@@ -472,7 +472,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <label className="label">Цена за ед.</label>
-                          <label style={{ fontSize: 10, color: '#F59E0B', cursor: 'pointer' }}>
+                          <label style={{ fontSize: 11, color: 'var(--primary)', cursor: 'pointer' }}>
                             <input
                               type="checkbox"
                               checked={ci.item.isManualPrice}
@@ -499,13 +499,13 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                           />
                         ) : (
                           <div style={{
-                            padding: '9px 12px',
-                            background: 'rgba(0,0,0,0.4)',
-                            borderRadius: 8,
+                            padding: '8px 12px',
+                            background: '#FFFFFF',
+                            borderRadius: 'var(--radius-sm)',
                             fontSize: 13,
                             fontWeight: 700,
-                            color: ci.tierPrice ? '#F59E0B' : '#FDA4AF',
-                            border: '1px solid var(--border-subtle)'
+                            color: ci.tierPrice ? 'var(--primary)' : 'var(--rose-dark)',
+                            border: '1px solid var(--border-medium)'
                           }}>
                             {ci.tierPrice ? `${ci.tierPrice} ₸` : 'Требуется расчет'}
                           </div>
@@ -519,7 +519,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: '#FDA4AF',
+                          color: 'var(--rose-danger)',
                           cursor: 'pointer',
                           padding: 6,
                           marginTop: 18
@@ -534,7 +534,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 10 }}>
                       {ci.item.isManualPrice && (
                         <div>
-                          <label className="label" style={{ color: '#F59E0B' }}>Основание ручной цены *</label>
+                          <label className="label" style={{ color: 'var(--primary)' }}>Основание ручной цены *</label>
                           <input
                             type="text"
                             placeholder="Спец. договоренность / Акция"
@@ -564,8 +564,8 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                       </div>
 
                       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 11, color: '#94A3B8' }}>Итого по позиции:</span>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: '#10B981' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Итого по позиции:</span>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--emerald-dark)' }}>
                           {formatCurrency(ci.subtotal)}
                         </span>
                       </div>
@@ -578,7 +578,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
             {/* Секция доплат (клише, печать, усиление) */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h4 style={{ fontSize: 14, color: '#FFF' }}>2. Доплаты и услуги (клише, печать, усиление)</h4>
+                <h4 style={{ fontSize: 14, color: 'var(--text-main)' }}>2. Доплаты и услуги (клише, печать, усиление)</h4>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
@@ -597,9 +597,10 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                       display: 'grid',
                       gridTemplateColumns: '2fr 1fr 1fr auto',
                       gap: 12,
-                      background: 'rgba(255,255,255,0.02)',
+                      background: '#F8FAFC',
+                      border: '1px solid var(--border-subtle)',
                       padding: 10,
-                      borderRadius: 8,
+                      borderRadius: 'var(--radius-sm)',
                       alignItems: 'center'
                     }}
                   >
@@ -632,14 +633,14 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
                       }}
                     />
 
-                    <div style={{ textAlign: 'right', fontWeight: 700, color: '#F59E0B' }}>
+                    <div style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>
                       {formatCurrency(cc.totalCharge)}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleRemoveCharge(idx)}
-                      style={{ background: 'transparent', border: 'none', color: '#FDA4AF', cursor: 'pointer' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--rose-danger)', cursor: 'pointer' }}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -650,26 +651,26 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
 
             {/* Итоговая сводка и кнопка финализации */}
             <div style={{
-              background: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.2)',
-              borderRadius: 12,
-              padding: 18,
+              background: 'var(--primary-light)',
+              border: '1px solid var(--primary-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: 16,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: 20
             }}>
               <div>
-                <div style={{ fontSize: 13, color: '#FDE68A' }}>
+                <div style={{ fontSize: 13, color: 'var(--text-main)' }}>
                   Товары: <strong>{formatCurrency(subtotal)}</strong> | Доплаты: <strong>{formatCurrency(totalCharges)}</strong>
                 </div>
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                   * При сохранении создается неизменяемый снимок цен v1 для фиксации в договоре.
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#F59E0B' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>
                   {formatCurrency(grandTotal)}
                 </div>
               </div>

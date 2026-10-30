@@ -53,50 +53,56 @@ export default function LeadsPage() {
       <Header onQuickAction={() => handleCreateLead()} />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Лиды и обращения</h1>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Лиды и обращения</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
               Поступающие запросы от кофеен, квалификация и конвертация в сделки
             </p>
           </div>
 
           <button className="btn btn-primary" onClick={handleCreateLead}>
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Новый лид</span>
           </button>
         </div>
 
         {/* Фильтры по статусам (ТЗ п. 3.3) */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
           {[
             { id: 'all', label: 'Все обращения', count: leads.length },
             { id: 'new', label: 'Новые', count: leads.filter(l => l.status === 'new').length },
             { id: 'in_progress', label: 'В работе', count: leads.filter(l => l.status === 'in_progress').length },
             { id: 'qualified', label: 'Квалифицированы', count: leads.filter(l => l.status === 'qualified').length },
             { id: 'junk', label: 'Нецелевые', count: leads.filter(l => l.status === 'junk').length },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveFilter(tab.id as any)}
-              className="btn btn-secondary btn-sm"
-              style={{
-                background: activeFilter === tab.id ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                borderColor: activeFilter === tab.id ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-subtle)',
-                color: activeFilter === tab.id ? '#FCD34D' : '#94A3B8',
-              }}
-            >
-              <span>{tab.label}</span>
-              <span style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                padding: '1px 6px',
-                borderRadius: 8,
-                fontSize: 11
-              }}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
+          ].map(tab => {
+            const isActive = activeFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveFilter(tab.id as any)}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  background: isActive ? 'var(--primary-light)' : '#FFFFFF',
+                  borderColor: isActive ? 'var(--primary-border)' : 'var(--border-subtle)',
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 600 : 500,
+                }}
+              >
+                <span>{tab.label}</span>
+                <span style={{
+                  background: isActive ? 'var(--primary-border)' : '#F1F5F9',
+                  color: isActive ? 'var(--primary-hover)' : 'var(--text-muted)',
+                  padding: '1px 6px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 600
+                }}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Таблица лидов */}
@@ -119,11 +125,11 @@ export default function LeadsPage() {
 
                 return (
                   <tr key={lead.id} style={{ cursor: 'pointer' }} onClick={() => handleEditLead(lead)}>
-                    <td style={{ fontWeight: 600 }}>{lead.name}</td>
-                    <td style={{ color: '#CBD5E1' }}>{lead.company_name || '—'}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{lead.name}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{lead.company_name || '—'}</td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span>{lead.phone || '—'}</span>
+                        <span style={{ color: 'var(--text-main)' }}>{lead.phone || '—'}</span>
                         {lead.phone && (
                           <a
                             href={`https://wa.me/${normalized}`}
@@ -133,9 +139,9 @@ export default function LeadsPage() {
                             style={{
                               padding: '2px 8px',
                               fontSize: 11,
-                              color: '#6EE7B7',
-                              borderColor: 'rgba(16, 185, 129, 0.3)',
-                              background: 'rgba(16, 185, 129, 0.08)'
+                              color: 'var(--emerald-dark)',
+                              borderColor: 'var(--emerald-border)',
+                              background: 'var(--emerald-light)'
                             }}
                             title="Открыть WhatsApp (ТЗ п. 1)"
                           >
@@ -146,26 +152,26 @@ export default function LeadsPage() {
                       </div>
                     </td>
                     <td style={{ maxWidth: 260 }}>
-                      <span style={{ fontSize: 13, color: '#94A3B8' }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                         {lead.interested_products || '—'}
                       </span>
                     </td>
                     <td>{getStatusBadge(lead.status, lead.junk_reason)}</td>
-                    <td suppressHydrationWarning style={{ fontSize: 12, color: '#64748B' }}>
+                    <td suppressHydrationWarning style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {new Date(lead.created_at).toLocaleDateString('ru-RU')}
                     </td>
                     <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                       {lead.status !== 'qualified' ? (
                         <button
                           className="btn btn-secondary btn-sm"
-                          style={{ borderColor: 'rgba(16, 185, 129, 0.4)', color: '#6EE7B7' }}
+                          style={{ borderColor: 'var(--emerald-border)', color: 'var(--emerald-dark)', background: 'var(--emerald-light)' }}
                           onClick={() => handleEditLead(lead)}
                         >
                           <ArrowRight size={13} />
                           <span>Конвертировать</span>
                         </button>
                       ) : (
-                        <span style={{ fontSize: 12, color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 12, color: 'var(--emerald-dark)', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
                           <CheckCircle size={14} /> Сконвертирован
                         </span>
                       )}
@@ -176,7 +182,7 @@ export default function LeadsPage() {
 
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: '#64748B' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
                     В данной категории нет лидов.
                   </td>
                 </tr>

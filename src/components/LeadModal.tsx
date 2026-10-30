@@ -91,12 +91,12 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: 580 }}>
         <div className="modal-header">
-          <h3 style={{ fontSize: 18, color: '#FFF' }}>
+          <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
             {isConverting 
               ? 'Конвертация лида в сделку и клиента' 
               : lead ? 'Редактирование лида' : 'Новый лид'}
           </h3>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -104,17 +104,17 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
         {/* ПРЕДУПРЕЖДЕНИЕ О ВОЗМОЖНОМ ДУБЛЕ ПО ТЕЛЕФОНУ (ТЗ п. 3.3) */}
         {duplicateContact && !lead?.converted_at && (
           <div style={{
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: 10,
+            background: 'var(--amber-light)',
+            border: '1px solid var(--amber-border)',
+            borderRadius: 'var(--radius-sm)',
             padding: 12,
             marginBottom: 16,
             display: 'flex',
             alignItems: 'center',
             gap: 10
           }}>
-            <AlertTriangle size={18} color="#F59E0B" />
-            <div style={{ fontSize: 12, color: '#FDE68A' }}>
+            <AlertTriangle size={18} color="var(--amber-warning)" />
+            <div style={{ fontSize: 12, color: 'var(--amber-dark)' }}>
               <strong>Внимание!</strong> Найден контакт с похожим номером: <strong>{duplicateContact.first_name}</strong> ({duplicateContact.phone}).
             </div>
           </div>
@@ -122,7 +122,7 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
 
         {isConverting ? (
           <div>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
               При конвертации будет создан контакт <strong>{lead?.name}</strong> и привязана компания.
             </p>
 
@@ -141,7 +141,7 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#FFF' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--text-main)' }}>
                 <input
                   type="checkbox"
                   checked={createDeal}

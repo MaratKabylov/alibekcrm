@@ -28,16 +28,16 @@ export default function CompaniesPage() {
       <Header onQuickAction={() => handleCreateCompany()} />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Компании и клиенты</h1>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Компании и клиенты</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
               Кофейни, сети, пиццерии, адреса доставки и реквизиты (БИН/ИИН)
             </p>
           </div>
 
           <button className="btn btn-primary" onClick={handleCreateCompany}>
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Новая компания</span>
           </button>
         </div>
@@ -65,21 +65,21 @@ export default function CompaniesPage() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          background: 'rgba(245, 158, 11, 0.1)',
+                          width: 34,
+                          height: 34,
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--primary-light)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#F59E0B'
+                          color: 'var(--primary)'
                         }}>
-                          <Building2 size={18} />
+                          <Building2 size={17} />
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, color: '#FFF' }}>{company.name}</div>
+                          <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{company.name}</div>
                           {company.website && (
-                            <div style={{ fontSize: 11, color: '#64748B' }}>{company.website}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{company.website}</div>
                           )}
                         </div>
                       </div>
@@ -87,21 +87,21 @@ export default function CompaniesPage() {
                     <td>
                       <span className="badge badge-amber">{company.client_type}</span>
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#CBD5E1' }}>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-secondary)' }}>
                       {company.bin_iin || '—'}
                     </td>
                     <td>
                       <div style={{ fontSize: 12 }}>
-                        {company.phone && <div>{company.phone}</div>}
-                        <div style={{ color: '#94A3B8', fontSize: 11 }}>
+                        {company.phone && <div style={{ color: 'var(--text-main)' }}>{company.phone}</div>}
+                        <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                           {companyContacts.length} контактных лиц
                         </div>
                       </div>
                     </td>
                     <td>
                       {company.delivery_addresses && company.delivery_addresses.length > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#94A3B8' }}>
-                          <MapPin size={13} color="#F59E0B" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
+                          <MapPin size={13} color="var(--primary)" />
                           <span>{company.delivery_addresses[0]}</span>
                           {company.delivery_addresses.length > 1 && (
                             <span className="badge badge-sky" style={{ fontSize: 10, padding: '1px 5px' }}>
@@ -110,7 +110,7 @@ export default function CompaniesPage() {
                           )}
                         </div>
                       ) : (
-                        <span style={{ color: '#64748B', fontSize: 12 }}>Не указан</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Не указан</span>
                       )}
                     </td>
                     <td>
@@ -122,7 +122,7 @@ export default function CompaniesPage() {
                         ))}
                       </div>
                     </td>
-                    <td style={{ fontWeight: 600, color: '#FCD34D' }}>
+                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
                       {companyDeals.length}
                     </td>
                   </tr>

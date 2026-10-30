@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
 import { Quote, QuoteStatus } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
-import { Plus, FileText, Printer, Building2, Calendar, CheckCircle2, Clock, Send } from 'lucide-react';
+import { Plus, FileText, Printer, Building2, Calendar, CheckCircle2, Clock, Send, X } from 'lucide-react';
 
 export default function QuotesPage() {
   const { quotes, deals, updateQuote, settings } = useCRM();
@@ -28,7 +28,7 @@ export default function QuotesPage() {
       case 'rejected':
         return <span className="badge badge-rose">Отклонено</span>;
       case 'expired':
-        return <span className="badge" style={{ background: 'rgba(100,116,139,0.2)', color: '#94A3B8' }}>Истекло</span>;
+        return <span className="badge" style={{ background: '#F1F5F9', color: 'var(--text-muted)' }}>Истекло</span>;
       default:
         return null;
     }
@@ -44,16 +44,16 @@ export default function QuotesPage() {
       <Header />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Коммерческие предложения (КП)</h1>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Коммерческие предложения (КП)</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
               Версионирование, слепки цен и формирование официальных PDF-бланков
             </p>
           </div>
 
           <button className="btn btn-primary" onClick={() => setQuoteModalOpen(true)}>
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Новое КП</span>
           </button>
         </div>
@@ -80,38 +80,39 @@ export default function QuotesPage() {
                   <tr key={quote.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <FileText size={16} color="#F59E0B" />
+                        <FileText size={16} color="var(--primary)" />
                         <div>
-                          <strong style={{ color: '#FFF' }}>{quote.quote_number}</strong>
+                          <strong style={{ color: 'var(--text-main)' }}>{quote.quote_number}</strong>
                           <span style={{
                             marginLeft: 6,
                             fontSize: 11,
-                            background: 'rgba(255,255,255,0.08)',
+                            background: '#F1F5F9',
                             padding: '1px 5px',
                             borderRadius: 4,
-                            color: '#FCD34D'
+                            color: 'var(--text-secondary)',
+                            fontWeight: 600
                           }}>
                             v{version?.version_number || 1}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td style={{ color: '#CBD5E1' }}>
+                    <td style={{ color: 'var(--text-secondary)' }}>
                       {deal ? deal.title : '—'}
                     </td>
                     <td>
                       <div>
-                        <strong>{quote.recipient_company || quote.recipient_name}</strong>
+                        <strong style={{ color: 'var(--text-main)' }}>{quote.recipient_company || quote.recipient_name}</strong>
                         {quote.recipient_company && (
-                          <div style={{ fontSize: 11, color: '#94A3B8' }}>{quote.recipient_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{quote.recipient_name}</div>
                         )}
                       </div>
                     </td>
                     <td>{getStatusBadge(quote.status)}</td>
-                    <td suppressHydrationWarning style={{ fontSize: 12, color: '#94A3B8' }}>
+                    <td suppressHydrationWarning style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       До {new Date(quote.valid_until).toLocaleDateString('ru-RU')}
                     </td>
-                    <td style={{ fontWeight: 800, color: '#F59E0B' }}>
+                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
                       {formatCurrency(version?.total_amount || 0)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -119,7 +120,7 @@ export default function QuotesPage() {
                         {quote.status !== 'sent' && quote.status !== 'accepted' && (
                           <button
                             className="btn btn-secondary btn-sm"
-                            style={{ color: '#818CF8' }}
+                            style={{ color: 'var(--primary)' }}
                             onClick={() => handleMarkSent(quote)}
                             title="Отметить как отправленное"
                           >
@@ -128,7 +129,7 @@ export default function QuotesPage() {
                         )}
                         <button
                           className="btn btn-secondary btn-sm"
-                          style={{ color: '#FCD34D', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+                          style={{ color: 'var(--primary)', borderColor: 'var(--primary-border)' }}
                           onClick={() => setPreviewQuote(quote)}
                         >
                           <Printer size={13} />
@@ -149,20 +150,24 @@ export default function QuotesPage() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: 860 }}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 18, color: '#FFF' }}>
+              <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
                 {previewQuote.quote_number} (Версия {previewQuote.current_version?.version_number || 1})
               </h3>
-              <button onClick={() => setPreviewQuote(null)} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
-                <Printer size={18} style={{ marginRight: 12 }} onClick={() => window.print()} />
-                Закрыть
+              <button 
+                onClick={() => setPreviewQuote(null)} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <X size={18} />
+                <span>Закрыть</span>
               </button>
             </div>
 
             <div style={{
               background: '#FFFFFF',
               color: '#0F172A',
-              padding: 32,
-              borderRadius: 8,
+              padding: 28,
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: 'var(--font-sans)',
               maxHeight: '70vh',
               overflowY: 'auto'
@@ -170,7 +175,7 @@ export default function QuotesPage() {
               {/* Шапка бланка */}
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #E2E8F0', paddingBottom: 16, marginBottom: 20 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, color: '#0F172A', fontWeight: 800 }}>{settings.company_name}</h2>
+                  <h2 style={{ fontSize: 18, color: '#0F172A', fontWeight: 800 }}>{settings.company_name}</h2>
                   <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>
                     <div>{settings.legal_name} | БИН: {settings.bin_iin}</div>
                     <div>{settings.address}</div>
@@ -178,14 +183,14 @@ export default function QuotesPage() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#D97706' }}>КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#2563EB' }}>КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
                   <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{previewQuote.quote_number}</div>
                   <div style={{ fontSize: 12, color: '#475569' }}>Дата: {new Date(previewQuote.created_at).toLocaleDateString('ru-RU')}</div>
                 </div>
               </div>
 
               {/* Получатель */}
-              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 6, marginBottom: 20, fontSize: 12 }}>
+              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 6, marginBottom: 20, fontSize: 12, border: '1px solid #E2E8F0' }}>
                 <span style={{ fontWeight: 700, color: '#334155' }}>Заказчик: </span>
                 <strong>{previewQuote.recipient_company || previewQuote.recipient_name}</strong>
                 {previewQuote.recipient_phone && ` (Телефон: ${previewQuote.recipient_phone})`}
@@ -198,8 +203,9 @@ export default function QuotesPage() {
                     <th style={{ padding: '8px 10px' }}>Артикул</th>
                     <th style={{ padding: '8px 10px' }}>Наименование и характеристики (Снимок)</th>
                     <th style={{ padding: '8px 10px', textAlign: 'center' }}>Количество</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Цена за шт.</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Сумма</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Цена за ед.</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Скидка</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Сумма (KZT)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,43 +213,72 @@ export default function QuotesPage() {
                     <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)' }}>{item.sku_snapshot}</td>
                       <td style={{ padding: '8px 10px' }}>
-                        <div style={{ fontWeight: 700 }}>{item.name_snapshot}</div>
+                        <strong>{item.name_snapshot}</strong>
                         <div style={{ fontSize: 10, color: '#64748B' }}>
-                          {Object.entries(item.characteristics_snapshot || {}).map(([k, v]) => `${k}: ${v}`).join(' | ')}
+                          {Object.entries(item.characteristics_snapshot || {}).map(([k, v]) => v ? `${k}: ${v}` : '').filter(Boolean).join(' | ')}
                         </div>
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600 }}>
-                        {item.quantity.toLocaleString('ru-RU')} {item.unit_snapshot}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>
-                        {formatCurrency(item.base_unit_price)}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
-                        {formatCurrency(item.item_subtotal)}
-                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{item.quantity.toLocaleString('ru-RU')} {item.unit_snapshot}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatCurrency(item.base_unit_price)}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{item.discount_percent > 0 ? `${item.discount_percent}%` : '—'}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(item.item_subtotal)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Сборы */}
+              {/* Доплаты */}
               {previewQuote.current_version?.charges && previewQuote.current_version.charges.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Дополнительные сборы:</div>
-                  {previewQuote.current_version.charges.map((c, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px dashed #E2E8F0' }}>
-                      <span>{c.name_snapshot} {c.reason && `(${c.reason})`}</span>
-                      <strong>{formatCurrency(c.total_charge)}</strong>
-                    </div>
-                  ))}
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                    Дополнительные услуги и сборы:
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                    <tbody>
+                      {previewQuote.current_version.charges.map((charge, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '4px 8px' }}>{charge.name_snapshot}</td>
+                          <td style={{ padding: '4px 8px', color: '#64748B' }}>{charge.reason || 'Фиксированный сбор'}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(charge.total_charge)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
-              {/* Итог */}
-              <div style={{ textAlign: 'right', borderTop: '2px solid #0F172A', paddingTop: 16 }}>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>
-                  ИТОГО: {formatCurrency(previewQuote.current_version?.total_amount || 0)}
+              {/* Итоги */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+                <div style={{ width: 280, textAlign: 'right' }}>
+                  <div style={{ fontSize: 12, color: '#64748B' }}>
+                    Сумма по товарам: {formatCurrency(previewQuote.current_version?.subtotal || 0)}
+                  </div>
+                  {previewQuote.current_version?.total_surcharges ? (
+                    <div style={{ fontSize: 12, color: '#64748B' }}>
+                      Сборы и услуги: {formatCurrency(previewQuote.current_version.total_surcharges)}
+                    </div>
+                  ) : null}
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+                    ИТОГО: {formatCurrency(previewQuote.current_version?.total_amount || 0)}
+                  </div>
                 </div>
+              </div>
+
+              {/* Условия */}
+              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 6, fontSize: 11, color: '#475569', border: '1px solid #E2E8F0' }}>
+                <div><strong>Условия оплаты:</strong> {previewQuote.payment_terms}</div>
+                <div><strong>Сроки изготовления:</strong> {previewQuote.production_terms}</div>
+                <div><strong>Условия доставки:</strong> {previewQuote.delivery_terms}</div>
+              </div>
+
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => window.print()}
+                >
+                  <Printer size={14} />
+                  <span>Печать в PDF</span>
+                </button>
               </div>
             </div>
           </div>

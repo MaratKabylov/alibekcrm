@@ -38,53 +38,59 @@ export default function TasksPage() {
       <Header />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Задачи и контроль звонков</h1>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Задачи и контроль звонков</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
               Контроль выполнения дедлайнов, звонки клиентам и отправка сообщений
             </p>
           </div>
 
           <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Новая задача</span>
           </button>
         </div>
 
         {/* Фильтры */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
           {[
             { id: 'all', label: 'Все задачи', count: tasks.length },
             { id: 'today', label: 'На сегодня', count: todayStr ? tasks.filter(t => t.status === 'pending' && t.due_date.startsWith(todayStr)).length : 0 },
             { id: 'overdue', label: 'Просроченные', count: now ? tasks.filter(t => t.status === 'pending' && new Date(t.due_date) < now).length : 0 },
             { id: 'completed', label: 'Выполненные', count: tasks.filter(t => t.status === 'completed').length },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveFilter(tab.id as any)}
-              className="btn btn-secondary btn-sm"
-              style={{
-                background: activeFilter === tab.id ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                borderColor: activeFilter === tab.id ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-subtle)',
-                color: activeFilter === tab.id ? '#FCD34D' : '#94A3B8',
-              }}
-            >
-              <span>{tab.label}</span>
-              <span style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                padding: '1px 6px',
-                borderRadius: 8,
-                fontSize: 11
-              }}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
+          ].map(tab => {
+            const isActive = activeFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveFilter(tab.id as any)}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  background: isActive ? 'var(--primary-light)' : '#FFFFFF',
+                  borderColor: isActive ? 'var(--primary-border)' : 'var(--border-subtle)',
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 600 : 500,
+                }}
+              >
+                <span>{tab.label}</span>
+                <span style={{
+                  background: isActive ? 'var(--primary-border)' : '#F1F5F9',
+                  color: isActive ? 'var(--primary-hover)' : 'var(--text-muted)',
+                  padding: '1px 6px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 600
+                }}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Список задач */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredTasks.map(task => {
             const isCompleted = task.status === 'completed';
             const isOverdue = now ? (!isCompleted && new Date(task.due_date) < now) : false;
@@ -96,9 +102,9 @@ export default function TasksPage() {
                 key={task.id}
                 className="card"
                 style={{
-                  padding: 18,
-                  background: isCompleted ? 'rgba(255, 255, 255, 0.01)' : isOverdue ? 'rgba(244, 63, 94, 0.05)' : 'var(--bg-card)',
-                  borderColor: isOverdue ? 'rgba(244, 63, 94, 0.3)' : 'var(--border-subtle)',
+                  padding: 16,
+                  background: isCompleted ? '#F8FAFC' : isOverdue ? '#FFF5F5' : '#FFFFFF',
+                  borderColor: isOverdue ? 'var(--rose-border)' : 'var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 16,
@@ -108,32 +114,32 @@ export default function TasksPage() {
                   type="checkbox"
                   checked={isCompleted}
                   onChange={() => toggleTaskStatus(task.id)}
-                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#10B981' }}
+                  style={{ width: 17, height: 17, cursor: 'pointer', accentColor: 'var(--emerald-success)' }}
                 />
 
                 <div style={{ flex: 1 }}>
                   <div style={{
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 600,
-                    color: isCompleted ? '#64748B' : '#FFF',
+                    color: isCompleted ? 'var(--text-muted)' : 'var(--text-main)',
                     textDecoration: isCompleted ? 'line-through' : 'none'
                   }}>
                     {task.title}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 6, fontSize: 12, color: '#94A3B8' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
                     {company && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Building2 size={13} color="#F59E0B" />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-main)' }}>
+                        <Building2 size={13} color="var(--primary)" />
                         <span>{company.name}</span>
                       </div>
                     )}
                     {deal && (
-                      <span style={{ color: '#CBD5E1' }}>Сделка: {deal.title}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>Сделка: {deal.title}</span>
                     )}
                     <span 
                       suppressHydrationWarning 
-                      style={{ color: isOverdue ? '#FDA4AF' : '#94A3B8', fontWeight: isOverdue ? 700 : 400 }}
+                      style={{ color: isOverdue ? 'var(--rose-dark)' : 'var(--text-muted)', fontWeight: isOverdue ? 700 : 400 }}
                     >
                       Срок: {new Date(task.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -149,7 +155,11 @@ export default function TasksPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-secondary btn-sm"
-                    style={{ color: '#6EE7B7', borderColor: 'rgba(16, 185, 129, 0.3)' }}
+                    style={{ 
+                      color: 'var(--emerald-dark)', 
+                      borderColor: 'var(--emerald-border)',
+                      background: 'var(--emerald-light)'
+                    }}
                   >
                     <MessageSquare size={13} />
                     <span>WhatsApp</span>
@@ -160,7 +170,7 @@ export default function TasksPage() {
           })}
 
           {filteredTasks.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: '#64748B' }}>
+            <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
               Нет задач в данном фильтре
             </div>
           )}

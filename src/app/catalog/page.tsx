@@ -23,46 +23,49 @@ export default function CatalogPage() {
       <Header />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Каталог упаковки и прайс-лист</h1>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Каталог упаковки и прайс-лист</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
               Цены по тиражам в KZT, характеристики стаканов, крышек и коробок
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="btn btn-primary" onClick={() => setQuoteModalOpen(true)}>
-              <FileText size={16} />
+              <FileText size={15} />
               <span>Создать КП по каталогу</span>
             </button>
           </div>
         </div>
 
         {/* Вкладки категорий */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
           <button
             onClick={() => setSelectedCategory('all')}
             className="btn btn-secondary btn-sm"
             style={{
-              background: selectedCategory === 'all' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-              borderColor: selectedCategory === 'all' ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-subtle)',
-              color: selectedCategory === 'all' ? '#FCD34D' : '#94A3B8',
+              background: selectedCategory === 'all' ? 'var(--primary-light)' : '#FFFFFF',
+              borderColor: selectedCategory === 'all' ? 'var(--primary-border)' : 'var(--border-subtle)',
+              color: selectedCategory === 'all' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: selectedCategory === 'all' ? 600 : 500,
             }}
           >
             Все категории ({products.length})
           </button>
           {categories.map(cat => {
             const count = products.filter(p => p.category_id === cat.id).length;
+            const isSelected = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 className="btn btn-secondary btn-sm"
                 style={{
-                  background: selectedCategory === cat.id ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                  borderColor: selectedCategory === cat.id ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-subtle)',
-                  color: selectedCategory === cat.id ? '#FCD34D' : '#94A3B8',
+                  background: isSelected ? 'var(--primary-light)' : '#FFFFFF',
+                  borderColor: isSelected ? 'var(--primary-border)' : 'var(--border-subtle)',
+                  color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: isSelected ? 600 : 500,
                 }}
               >
                 {cat.name} ({count})
@@ -72,7 +75,7 @@ export default function CatalogPage() {
         </div>
 
         {/* Сетка товаров с карточками и таблицами ступеней цен (ТЗ п. 4.1 и 4.2) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 18 }}>
           {filteredProducts.map(product => {
             const tiers = priceTiers.filter(t => t.product_id === product.id);
             const category = categories.find(c => c.id === product.category_id);
@@ -80,7 +83,7 @@ export default function CatalogPage() {
             return (
               <div key={product.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 {/* Фото товара */}
-                <div style={{ position: 'relative', height: 180, width: '100%', background: '#0F1218' }}>
+                <div style={{ position: 'relative', height: 180, width: '100%', background: '#F1F5F9' }}>
                   <img
                     src={product.images?.[0]?.url || 'https://via.placeholder.com/400x200'}
                     alt={product.name}
@@ -88,30 +91,29 @@ export default function CatalogPage() {
                   />
                   <div style={{
                     position: 'absolute',
-                    top: 12,
-                    left: 12,
-                    background: 'rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(8px)',
-                    padding: '4px 8px',
-                    borderRadius: 6,
+                    top: 10,
+                    left: 10,
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(4px)',
+                    padding: '3px 8px',
+                    borderRadius: 4,
                     fontSize: 11,
                     fontWeight: 700,
-                    color: '#F59E0B',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    color: '#FFFFFF'
                   }}>
                     {product.sku}
                   </div>
                   {category && (
                     <div style={{
                       position: 'absolute',
-                      bottom: 12,
-                      left: 12,
-                      background: 'rgba(0,0,0,0.7)',
-                      backdropFilter: 'blur(8px)',
+                      bottom: 10,
+                      left: 10,
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      backdropFilter: 'blur(4px)',
                       padding: '3px 8px',
-                      borderRadius: 6,
+                      borderRadius: 4,
                       fontSize: 11,
-                      color: '#E2E8F0',
+                      color: '#FFFFFF',
                     }}>
                       {category.name}
                     </div>
@@ -119,16 +121,16 @@ export default function CatalogPage() {
                 </div>
 
                 {/* Описание и характеристики */}
-                <div style={{ padding: 20 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#FFF' }}>
+                <div style={{ padding: 18 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: 'var(--text-main)' }}>
                     {product.name}
                   </h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 14, minHeight: 34 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, minHeight: 32 }}>
                     {product.description}
                   </p>
 
                   {/* Свойства */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
                     {product.volume && (
                       <span className="badge badge-amber" style={{ fontSize: 11 }}>
                         Объем: {product.volume}
@@ -153,18 +155,18 @@ export default function CatalogPage() {
 
                   {/* Таблица ступеней цен (Tiers) */}
                   <div style={{
-                    background: 'rgba(0,0,0,0.3)',
+                    background: '#F8FAFC',
                     border: '1px solid var(--border-subtle)',
-                    borderRadius: 8,
+                    borderRadius: 'var(--radius-sm)',
                     overflow: 'hidden',
-                    marginBottom: 16
+                    marginBottom: 14
                   }}>
                     <div style={{
                       padding: '6px 10px',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: '#F1F5F9',
                       fontSize: 11,
                       fontWeight: 700,
-                      color: '#94A3B8',
+                      color: 'var(--text-secondary)',
                       borderBottom: '1px solid var(--border-subtle)'
                     }}>
                       Ступени цен от тиража:
@@ -177,14 +179,14 @@ export default function CatalogPage() {
                           justifyContent: 'space-between',
                           padding: '6px 10px',
                           fontSize: 12,
-                          borderBottom: idx === tiers.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                          borderBottom: idx === tiers.length - 1 ? 'none' : '1px solid var(--border-subtle)',
                         }}
                       >
-                        <span style={{ color: '#CBD5E1' }}>
+                        <span style={{ color: 'var(--text-main)' }}>
                           От {tier.min_quantity.toLocaleString('ru-RU')} шт
                           {tier.max_quantity ? ` до ${tier.max_quantity.toLocaleString('ru-RU')}` : '+'}
                         </span>
-                        <strong style={{ color: '#F59E0B' }}>
+                        <strong style={{ color: 'var(--primary)' }}>
                           {formatCurrency(tier.unit_price)}
                         </strong>
                       </div>
@@ -192,57 +194,22 @@ export default function CatalogPage() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                       Мин. заказ: {product.min_order_quantity} {product.unit} (в упак. {product.pack_quantity})
                     </div>
                     <button
                       className="btn btn-secondary btn-sm"
-                      style={{ color: '#FCD34D', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+                      style={{ color: 'var(--primary)', borderColor: 'var(--primary-border)' }}
                       onClick={() => setQuoteModalOpen(true)}
                     >
-                      Рассчитать в КП
+                      <Plus size={13} />
+                      <span>В КП</span>
                     </button>
                   </div>
                 </div>
               </div>
             );
           })}
-        </div>
-
-        {/* Блок стандартных правил доплат (ТЗ п. 4.3) */}
-        <div className="card" style={{ marginTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <Layers size={18} color="#F59E0B" />
-            <h3 style={{ fontSize: 16 }}>Стандартные сборы и доплаты (клише, печать, усиление)</h3>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-            {surchargeRules.map(rule => (
-              <div
-                key={rule.id}
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 10,
-                  padding: 14,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{rule.name}</h4>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#F59E0B' }}>
-                    {rule.default_price > 0 ? formatCurrency(rule.default_price) : 'По согласованию'}
-                  </span>
-                </div>
-                <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>
-                  {rule.description}
-                </p>
-                <div style={{ marginTop: 8 }}>
-                  <span className="badge badge-sky" style={{ fontSize: 10 }}>
-                    {rule.surcharge_type === 'one_time_fixed' ? 'Разовый сбор' : rule.surcharge_type === 'per_unit' ? 'За 1 стакан' : 'За доп. цвет'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

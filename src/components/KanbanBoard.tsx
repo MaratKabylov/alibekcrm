@@ -78,25 +78,26 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
               <div className="kanban-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{
-                    width: 10,
-                    height: 10,
+                    width: 9,
+                    height: 9,
                     borderRadius: '50%',
                     backgroundColor: stage.color
                   }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>
                     {stage.name}
                   </span>
                   <span style={{
                     fontSize: 11,
-                    background: 'rgba(255,255,255,0.08)',
+                    background: '#CBD5E1',
                     padding: '2px 7px',
                     borderRadius: 10,
-                    color: '#94A3B8'
+                    color: '#334155',
+                    fontWeight: 600
                   }}>
                     {stageDeals.length}
                   </span>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
                   {formatCurrency(stageTotal)}
                 </span>
               </div>
@@ -116,14 +117,14 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                       onClick={() => onOpenDeal && onOpenDeal(deal)}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC', lineHeight: 1.3 }}>
+                        <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.3 }}>
                           {deal.title}
                         </h4>
                       </div>
 
                       {company && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94A3B8', marginBottom: 6 }}>
-                          <Building2 size={13} style={{ color: '#F59E0B' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                          <Building2 size={13} style={{ color: 'var(--primary)' }} />
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {company.name}
                           </span>
@@ -133,23 +134,23 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                       {deal.loss_reason && stage.is_lost && (
                         <div style={{
                           fontSize: 11,
-                          color: '#FDA4AF',
-                          background: 'rgba(244,63,94,0.1)',
+                          color: 'var(--rose-dark)',
+                          background: 'var(--rose-light)',
                           padding: '4px 8px',
-                          borderRadius: 6,
+                          borderRadius: 4,
                           marginBottom: 8,
-                          border: '1px solid rgba(244,63,94,0.2)'
+                          border: '1px solid var(--rose-border)'
                         }}>
                           Причина: {deal.loss_reason}
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
                           {formatCurrency(deal.amount)}
                         </span>
                         {deal.expected_close_date && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748B' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
                             <Calendar size={12} />
                             <span suppressHydrationWarning>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                           </div>
@@ -163,10 +164,10 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                   <div style={{
                     padding: '24px 12px',
                     textAlign: 'center',
-                    color: '#475569',
+                    color: 'var(--text-muted)',
                     fontSize: 12,
-                    border: '1px dashed rgba(255,255,255,0.06)',
-                    borderRadius: 8
+                    border: '1px dashed #CBD5E1',
+                    borderRadius: 6
                   }}>
                     Перетащите сделку сюда
                   </div>
@@ -183,11 +184,11 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
           <div className="modal-content" style={{ maxWidth: 460 }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <AlertCircle size={20} color="#F43F5E" />
-                <h3 style={{ fontSize: 16 }}>Причина проигрыша сделки</h3>
+                <AlertCircle size={20} color="var(--rose-danger)" />
+                <h3 style={{ fontSize: 16, color: 'var(--text-main)' }}>Причина проигрыша сделки</h3>
               </div>
             </div>
-            <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
               По регламенту CRM для перевода сделки в статус «Проиграна» необходимо зафиксировать причину.
             </p>
             <div style={{ marginBottom: 20 }}>

@@ -64,10 +64,10 @@ export function DealModal({ deal, isOpen, onClose, onOpenQuoteBuilder }: DealMod
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: 540 }}>
         <div className="modal-header">
-          <h3 style={{ fontSize: 18, color: '#FFF' }}>
+          <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
             {deal ? 'Карточка сделки' : 'Новая сделка'}
           </h3>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -170,7 +170,7 @@ export function DealModal({ deal, isOpen, onClose, onOpenQuoteBuilder }: DealMod
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ borderColor: '#F59E0B', color: '#FCD34D' }}
+                style={{ borderColor: 'var(--primary-border)', color: 'var(--primary)', background: 'var(--primary-light)' }}
                 onClick={() => {
                   onClose();
                   onOpenQuoteBuilder(deal.id);

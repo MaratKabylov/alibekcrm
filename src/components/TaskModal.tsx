@@ -57,8 +57,8 @@ export function TaskModal({ isOpen, onClose, dealId, companyId }: TaskModalProps
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: 480 }}>
         <div className="modal-header">
-          <h3 style={{ fontSize: 18, color: '#FFF' }}>Новая задача</h3>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>Новая задача</h3>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>

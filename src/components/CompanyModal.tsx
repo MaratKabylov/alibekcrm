@@ -76,10 +76,10 @@ export function CompanyModal({ company, isOpen, onClose }: CompanyModalProps) {
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: 560 }}>
         <div className="modal-header">
-          <h3 style={{ fontSize: 18, color: '#FFF' }}>
+          <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
             {company ? 'Карточка компании' : 'Новая компания'}
           </h3>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -176,7 +176,7 @@ export function CompanyModal({ company, isOpen, onClose }: CompanyModalProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {addresses.map((addr, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <MapPin size={16} color="#94A3B8" />
+                  <MapPin size={16} color="var(--primary)" />
                   <input
                     type="text"
                     placeholder={`Адрес доставки ${idx + 1}`}
@@ -188,7 +188,7 @@ export function CompanyModal({ company, isOpen, onClose }: CompanyModalProps) {
                     <button
                       type="button"
                       onClick={() => handleRemoveAddress(idx)}
-                      style={{ background: 'transparent', border: 'none', color: '#FDA4AF', cursor: 'pointer' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--rose-danger)', cursor: 'pointer' }}
                     >
                       <Trash2 size={16} />
                     </button>
