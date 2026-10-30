@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { CRMProvider } from '@/lib/store';
-import { Sidebar } from '@/components/Sidebar';
+import { AuthProvider } from '@/lib/auth-context';
+import { AppShell } from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'Alibek CRM — Продажа упаковки кофейням',
@@ -16,14 +17,13 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
-        <CRMProvider>
-          <div className="app-container">
-            <Sidebar />
-            <main className="main-content">
+        <AuthProvider>
+          <CRMProvider>
+            <AppShell>
               {children}
-            </main>
-          </div>
-        </CRMProvider>
+            </AppShell>
+          </CRMProvider>
+        </AuthProvider>
       </body>
     </html>
   );

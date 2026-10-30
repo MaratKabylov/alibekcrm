@@ -13,8 +13,10 @@ import {
   Package, 
   FileText, 
   Settings,
-  Coffee
+  Coffee,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
   { href: '/', label: 'Дашборд', icon: LayoutDashboard },
@@ -30,6 +32,18 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { profile, user, signOut } = useAuth();
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || 'Алибек М.';
+  const roleLabel = profile?.role === 'admin' ? 'Администратор' : 'Менеджер';
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase() || 'AM';
+  };
 
   return (
     <aside className="sidebar">
@@ -94,18 +108,51 @@ export function Sidebar() {
           justifyContent: 'center',
           fontSize: 13,
           fontWeight: 700,
-          color: '#FFFFFF'
+          color: '#FFFFFF',
+          flexShrink: 0
         }}>
-          АМ
+          {getInitials(displayName)}
         </div>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sidebar-footer-text)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-            Алибек М.
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <div 
+            style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--sidebar-footer-text)', 
+              whiteSpace: 'nowrap', 
+              overflow: 'hidden',
+              textOverflow: 'ellipsis' 
+            }}
+            title={displayName}
+          >
+            {displayName}
           </div>
           <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>
-            Администратор
+            {roleLabel}
           </div>
         </div>
+
+        {/* Кнопка выхода */}
+        <button
+          onClick={() => signOut()}
+          className="btn btn-secondary btn-sm"
+          style={{
+            padding: 6,
+            height: 30,
+            width: 30,
+            borderRadius: 'var(--radius-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            cursor: 'pointer'
+          }}
+          title="Выйти из системы"
+        >
+          <LogOut size={15} />
+        </button>
       </div>
     </aside>
   );
