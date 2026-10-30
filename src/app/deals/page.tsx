@@ -1,21 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
 import { KanbanBoard } from '@/components/KanbanBoard';
-import { DealModal } from '@/components/DealModal';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
 import { Deal } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
 import { Plus, LayoutGrid, List, Building2, Calendar, FileText } from 'lucide-react';
 
 export default function DealsPage() {
+  const router = useRouter();
   const { deals, stages, companies, contacts } = useCRM();
 
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [dealModalOpen, setDealModalOpen] = useState(false);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [activeQuoteDealId, setActiveQuoteDealId] = useState<string>('');
 
@@ -24,13 +23,11 @@ export default function DealsPage() {
     .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
   const handleOpenDeal = (deal: Deal) => {
-    setSelectedDeal(deal);
-    setDealModalOpen(true);
+    router.push(`/deals/${deal.id}`);
   };
 
   const handleCreateDeal = () => {
-    setSelectedDeal(null);
-    setDealModalOpen(true);
+    router.push('/deals/new');
   };
 
   const handleOpenQuoteBuilder = (dealId: string) => {
@@ -175,15 +172,6 @@ export default function DealsPage() {
           </div>
         )}
       </div>
-
-      {dealModalOpen && (
-        <DealModal
-          deal={selectedDeal}
-          isOpen={dealModalOpen}
-          onClose={() => setDealModalOpen(false)}
-          onOpenQuoteBuilder={handleOpenQuoteBuilder}
-        />
-      )}
 
       {quoteModalOpen && (
         <QuoteBuilderModal

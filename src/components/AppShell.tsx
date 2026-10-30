@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/auth');
 
@@ -22,3 +22,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="app-container"><main className="main-content">{children}</main></div>}>
+      <AppShellContent>{children}</AppShellContent>
+    </Suspense>
+  );
+}

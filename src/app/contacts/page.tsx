@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
-import { Contact } from '@/types/database';
-import { Building2, MessageSquare } from 'lucide-react';
+import { Building2, MessageSquare, Plus } from 'lucide-react';
 
 export default function ContactsPage() {
+  const router = useRouter();
   const { contacts, companies } = useCRM();
 
   return (
@@ -21,6 +22,11 @@ export default function ContactsPage() {
               Бариста, управляющие, директора по закупкам и лица, принимающие решения
             </p>
           </div>
+
+          <button className="btn btn-primary" onClick={() => router.push('/contacts/new')}>
+            <Plus size={15} />
+            <span>Новый контакт</span>
+          </button>
         </div>
 
         <div className="data-table-wrapper">
@@ -42,7 +48,7 @@ export default function ContactsPage() {
                 const normalized = contact.phone_normalized || contact.phone.replace(/\D/g, '');
 
                 return (
-                  <tr key={contact.id}>
+                  <tr key={contact.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/contacts/${contact.id}`)}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
@@ -84,7 +90,7 @@ export default function ContactsPage() {
                         {contact.preferred_channel.toUpperCase()}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                       <a
                         href={`https://wa.me/${normalized}`}
                         target="_blank"

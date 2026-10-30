@@ -1,26 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
-import { CompanyModal } from '@/components/CompanyModal';
-import { Company } from '@/types/database';
-import { Plus, Building2, MapPin, Phone, Mail, Tag } from 'lucide-react';
+import { Plus, Building2, MapPin } from 'lucide-react';
 
 export default function CompaniesPage() {
+  const router = useRouter();
   const { companies, contacts, deals } = useCRM();
 
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const handleEditCompany = (company: Company) => {
-    setSelectedCompany(company);
-    setModalOpen(true);
-  };
-
   const handleCreateCompany = () => {
-    setSelectedCompany(null);
-    setModalOpen(true);
+    router.push('/companies/new');
   };
 
   return (
@@ -61,7 +52,7 @@ export default function CompaniesPage() {
                 const companyDeals = deals.filter(d => d.company_id === company.id);
 
                 return (
-                  <tr key={company.id} style={{ cursor: 'pointer' }} onClick={() => handleEditCompany(company)}>
+                  <tr key={company.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/companies/${company.id}`)}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
@@ -132,14 +123,6 @@ export default function CompaniesPage() {
           </table>
         </div>
       </div>
-
-      {modalOpen && (
-        <CompanyModal
-          company={selectedCompany}
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
     </>
   );
 }

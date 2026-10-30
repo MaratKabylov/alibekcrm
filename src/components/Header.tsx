@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, Plus, Bell, RotateCcw, Palette, Sun, Moon } from 'lucide-react';
 import { useCRM } from '@/lib/store';
 
@@ -9,9 +10,26 @@ interface HeaderProps {
 }
 
 export function Header({ onQuickAction }: HeaderProps) {
+  const router = useRouter();
   const { tasks, resetToDefault } = useCRM();
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarTheme, setSidebarTheme] = useState<'classic' | 'light'>('classic');
+
+  const handleLeadAction = () => {
+    if (onQuickAction) {
+      onQuickAction('lead');
+    } else {
+      router.push('/leads/new');
+    }
+  };
+
+  const handleDealAction = () => {
+    if (onQuickAction) {
+      onQuickAction('deal');
+    } else {
+      router.push('/deals/new');
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('alibek_crm_sidebar_theme') as 'classic' | 'light' | null;
@@ -119,26 +137,24 @@ export function Header({ onQuickAction }: HeaderProps) {
         </div>
 
         {/* Быстрое создание */}
-        {onQuickAction && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              id="header-create-lead-btn"
-              onClick={() => onQuickAction('lead')}
-              className="btn btn-primary btn-sm"
-            >
-              <Plus size={14} />
-              <span>Новый лид</span>
-            </button>
-            <button
-              id="header-create-deal-btn"
-              onClick={() => onQuickAction('deal')}
-              className="btn btn-secondary btn-sm"
-            >
-              <Plus size={14} />
-              <span>Сделка</span>
-            </button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            id="header-create-lead-btn"
+            onClick={handleLeadAction}
+            className="btn btn-primary btn-sm"
+          >
+            <Plus size={14} />
+            <span>Новый лид</span>
+          </button>
+          <button
+            id="header-create-deal-btn"
+            onClick={handleDealAction}
+            className="btn btn-secondary btn-sm"
+          >
+            <Plus size={14} />
+            <span>Сделка</span>
+          </button>
+        </div>
       </div>
     </header>
   );

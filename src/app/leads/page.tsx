@@ -1,32 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
-import { LeadModal } from '@/components/LeadModal';
-import { Lead, LeadStatus } from '@/types/database';
-import { Plus, Users2, MessageSquare, Phone, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { LeadStatus } from '@/types/database';
+import { Plus, MessageSquare, Phone, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function LeadsPage() {
-  const { leads, companies, contacts } = useCRM();
+  const router = useRouter();
+  const { leads, contacts } = useCRM();
 
   const [activeFilter, setActiveFilter] = useState<'all' | LeadStatus>('all');
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   const filteredLeads = leads.filter(l => {
     if (activeFilter === 'all') return true;
     return l.status === activeFilter;
   });
 
-  const handleEditLead = (lead: Lead) => {
-    setSelectedLead(lead);
-    setModalOpen(true);
+  const handleEditLead = (leadId: string) => {
+    router.push(`/leads/${leadId}`);
   };
 
   const handleCreateLead = () => {
-    setSelectedLead(null);
-    setModalOpen(true);
+    router.push('/leads/new');
   };
 
   const getStatusBadge = (status: LeadStatus, junkReason?: string | null) => {
@@ -124,7 +121,7 @@ export default function LeadsPage() {
                 const normalized = lead.phone ? lead.phone.replace(/\D/g, '') : '';
 
                 return (
-                  <tr key={lead.id} style={{ cursor: 'pointer' }} onClick={() => handleEditLead(lead)}>
+                  <tr key={lead.id} style={{ cursor: 'pointer' }} onClick={() => handleEditLead(lead.id)}>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{lead.name}</td>
                     <td style={{ color: 'var(--text-secondary)' }}>{lead.company_name || '—'}</td>
                     <td onClick={(e) => e.stopPropagation()}>
@@ -165,7 +162,7 @@ export default function LeadsPage() {
                         <button
                           className="btn btn-secondary btn-sm"
                           style={{ borderColor: 'var(--emerald-border)', color: 'var(--emerald-dark)', background: 'var(--emerald-light)' }}
-                          onClick={() => handleEditLead(lead)}
+                          onClick={() => handleEditLead(lead.id)}
                         >
                           <ArrowRight size={13} />
                           <span>Конвертировать</span>
@@ -191,14 +188,6 @@ export default function LeadsPage() {
           </table>
         </div>
       </div>
-
-      {modalOpen && (
-        <LeadModal
-          lead={selectedLead}
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
     </>
   );
 }

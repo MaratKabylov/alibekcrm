@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
 import { formatCurrency } from '@/lib/calculator';
@@ -18,17 +19,14 @@ import {
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
-import { LeadModal } from '@/components/LeadModal';
-import { DealModal } from '@/components/DealModal';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
 import { TaskModal } from '@/components/TaskModal';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { deals, leads, tasks, companies, stages, toggleTaskStatus } = useCRM();
 
   // Состояния модалок
-  const [leadModalOpen, setLeadModalOpen] = useState(false);
-  const [dealModalOpen, setDealModalOpen] = useState(false);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
 
@@ -57,8 +55,9 @@ export default function DashboardPage() {
   const overdueTasks = currentDate ? pendingTasks.filter(t => new Date(t.due_date) < currentDate) : [];
 
   const handleQuickAction = (action: 'lead' | 'deal' | 'quote' | 'company') => {
-    if (action === 'lead') setLeadModalOpen(true);
-    if (action === 'deal') setDealModalOpen(true);
+    if (action === 'lead') router.push('/leads/new');
+    if (action === 'deal') router.push('/deals/new');
+    if (action === 'company') router.push('/companies/new');
     if (action === 'quote') setQuoteModalOpen(true);
   };
 
@@ -191,8 +190,9 @@ export default function DashboardPage() {
                 const stage = stages.find(s => s.id === deal.stage_id);
 
                 return (
-                  <div
+                  <Link
                     key={deal.id}
+                    href={`/deals/${deal.id}`}
                     style={{
                       background: '#FFFFFF',
                       border: '1px solid var(--border-subtle)',
@@ -201,7 +201,10 @@ export default function DashboardPage() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      boxShadow: 'var(--shadow-sm)'
+                      boxShadow: 'var(--shadow-sm)',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      transition: 'border-color 0.15s ease'
                     }}
                   >
                     <div>
@@ -237,7 +240,7 @@ export default function DashboardPage() {
                         {deal.expected_close_date ? `До ${new Date(deal.expected_close_date).toLocaleDateString('ru-RU')}` : 'Без срока'}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
 
@@ -354,21 +357,6 @@ export default function DashboardPage() {
       </div>
 
       {/* Модалки */}
-      {leadModalOpen && (
-        <LeadModal
-          isOpen={leadModalOpen}
-          onClose={() => setLeadModalOpen(false)}
-        />
-      )}
-
-      {dealModalOpen && (
-        <DealModal
-          isOpen={dealModalOpen}
-          onClose={() => setDealModalOpen(false)}
-          onOpenQuoteBuilder={(dId) => setQuoteModalOpen(true)}
-        />
-      )}
-
       {quoteModalOpen && (
         <QuoteBuilderModal
           isOpen={quoteModalOpen}
