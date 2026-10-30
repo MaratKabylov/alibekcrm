@@ -131,7 +131,10 @@ export default function TasksPage() {
                     {deal && (
                       <span style={{ color: '#CBD5E1' }}>Сделка: {deal.title}</span>
                     )}
-                    <span style={{ color: isOverdue ? '#FDA4AF' : '#94A3B8', fontWeight: isOverdue ? 700 : 400 }}>
+                    <span 
+                      suppressHydrationWarning 
+                      style={{ color: isOverdue ? '#FDA4AF' : '#94A3B8', fontWeight: isOverdue ? 700 : 400 }}
+                    >
                       Срок: {new Date(task.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {isOverdue && (

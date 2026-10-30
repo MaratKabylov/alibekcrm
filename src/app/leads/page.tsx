@@ -151,7 +151,7 @@ export default function LeadsPage() {
                       </span>
                     </td>
                     <td>{getStatusBadge(lead.status, lead.junk_reason)}</td>
-                    <td style={{ fontSize: 12, color: '#64748B' }}>
+                    <td suppressHydrationWarning style={{ fontSize: 12, color: '#64748B' }}>
                       {new Date(lead.created_at).toLocaleDateString('ru-RU')}
                     </td>
                     <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>

@@ -139,7 +139,7 @@ export default function DealsPage() {
                         {deal.expected_close_date ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#94A3B8' }}>
                             <Calendar size={13} />
-                            <span>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU')}</span>
+                            <span suppressHydrationWarning>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU')}</span>
                           </div>
                         ) : '—'}
                       </td>

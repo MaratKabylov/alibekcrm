@@ -302,7 +302,10 @@ export default function DashboardPage() {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 11, color: '#94A3B8' }}>
                         {company && <span>{company.name}</span>}
-                        <span style={{ color: isOverdue ? '#FDA4AF' : '#64748B', fontWeight: isOverdue ? 700 : 400 }}>
+                        <span 
+                          suppressHydrationWarning 
+                          style={{ color: isOverdue ? '#FDA4AF' : '#64748B', fontWeight: isOverdue ? 700 : 400 }}
+                        >
                           {new Date(task.due_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}, {new Date(task.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                         </span>
                         {isOverdue && (

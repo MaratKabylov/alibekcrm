@@ -151,7 +151,7 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                         {deal.expected_close_date && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748B' }}>
                             <Calendar size={12} />
-                            <span>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+                            <span suppressHydrationWarning>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                           </div>
                         )}
                       </div>

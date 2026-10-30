@@ -108,7 +108,7 @@ export default function QuotesPage() {
                       </div>
                     </td>
                     <td>{getStatusBadge(quote.status)}</td>
-                    <td style={{ fontSize: 12, color: '#94A3B8' }}>
+                    <td suppressHydrationWarning style={{ fontSize: 12, color: '#94A3B8' }}>
                       До {new Date(quote.valid_until).toLocaleDateString('ru-RU')}
                     </td>
                     <td style={{ fontWeight: 800, color: '#F59E0B' }}>
