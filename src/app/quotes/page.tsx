@@ -6,7 +6,8 @@ import { Header } from '@/components/Header';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
 import { Quote, QuoteStatus } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
-import { Plus, FileText, Printer, Building2, Calendar, CheckCircle2, Clock, Send, X } from 'lucide-react';
+import { Plus, FileText, Printer, Building2, Calendar, CheckCircle2, Clock, Send, X, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { downloadQuotePDF, previewQuotePDF } from '@/lib/pdf/download';
 
 export default function QuotesPage() {
   const { quotes, deals, updateQuote, settings } = useCRM();
@@ -14,6 +15,31 @@ export default function QuotesPage() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (quote: Quote) => {
+    try {
+      setDownloadingId(quote.id);
+      await downloadQuotePDF(quote, settings);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Попробуйте позже';
+      alert(`Ошибка генерации PDF: ${msg}`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handlePreviewInTab = async (quote: Quote) => {
+    try {
+      setDownloadingId(quote.id);
+      await previewQuotePDF(quote, settings);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Попробуйте позже';
+      alert(`Ошибка предпросмотра PDF: ${msg}`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const getStatusBadge = (status: QuoteStatus) => {
     switch (status) {
@@ -127,6 +153,20 @@ export default function QuotesPage() {
                             <Send size={13} />
                           </button>
                         )}
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ color: '#0F172A', borderColor: 'var(--border-subtle)' }}
+                          onClick={() => handleDownload(quote)}
+                          disabled={downloadingId === quote.id}
+                          title="Серверная генерация и скачивание PDF на компьютер"
+                        >
+                          {downloadingId === quote.id ? (
+                            <Loader2 size={13} className="spin" />
+                          ) : (
+                            <Download size={13} color="var(--primary)" />
+                          )}
+                          <span>{downloadingId === quote.id ? 'Создание...' : 'PDF'}</span>
+                        </button>
                         <button
                           className="btn btn-secondary btn-sm"
                           style={{ color: 'var(--primary)', borderColor: 'var(--primary-border)' }}
@@ -271,13 +311,39 @@ export default function QuotesPage() {
                 <div><strong>Условия доставки:</strong> {previewQuote.delivery_terms}</div>
               </div>
 
-              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => handlePreviewInTab(previewQuote)}
+                  disabled={downloadingId === previewQuote.id}
+                >
+                  <ExternalLink size={14} />
+                  <span>Открыть PDF</span>
+                </button>
+
                 <button
                   className="btn btn-primary btn-sm"
+                  onClick={() => handleDownload(previewQuote)}
+                  disabled={downloadingId === previewQuote.id}
+                  style={{ background: '#2563EB', borderColor: '#2563EB' }}
+                >
+                  {downloadingId === previewQuote.id ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <Download size={14} />
+                  )}
+                  <span>
+                    {downloadingId === previewQuote.id ? 'Формирование файла...' : 'Скачать PDF на компьютер'}
+                  </span>
+                </button>
+
+                <button
+                  className="btn btn-secondary btn-sm"
                   onClick={() => window.print()}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   <Printer size={14} />
-                  <span>Печать в PDF</span>
+                  <span>Печать</span>
                 </button>
               </div>
             </div>

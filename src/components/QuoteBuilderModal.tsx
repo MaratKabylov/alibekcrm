@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { useCRM } from '@/lib/store';
 import { Product, QuoteItem, QuoteCharge, SurchargeRule } from '@/types/database';
 import { findTierPrice, calculateItemTotal, calculateChargeTotal, formatCurrency, roundCurrency } from '@/lib/calculator';
-import { X, Plus, Trash2, Printer, CheckCircle2, AlertCircle, FileText, Sparkles } from 'lucide-react';
+import { X, Plus, Trash2, Printer, CheckCircle2, AlertCircle, FileText, Sparkles, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { downloadQuotePDF, previewQuotePDF } from '@/lib/pdf/download';
+import { Quote } from '@/types/database';
 
 interface QuoteBuilderModalProps {
   dealId?: string;
@@ -67,6 +69,8 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
 
   // Режим предпросмотра PDF-бланка
   const [previewMode, setPreviewMode] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [quoteNumber] = useState(() => `КП-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`);
 
   if (!isOpen) return null;
 
@@ -160,8 +164,6 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
       }
     }
 
-    const quoteNumber = `КП-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-
     const newQuoteItems: QuoteItem[] = calculatedItems.map((ci, idx) => ({
       id: `qi-${Date.now()}-${idx}`,
       quote_version_id: 'qv-temp',
@@ -232,6 +234,105 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
 
     alert(`КП ${quoteNumber} успешно сохранено на сумму ${formatCurrency(grandTotal)}! Сделка синхронизирована.`);
     onClose();
+  };
+
+  const constructCurrentQuote = (): Quote => {
+    const newQuoteItems: QuoteItem[] = calculatedItems.map((ci, idx) => ({
+      id: `item-${idx}`,
+      quote_version_id: 'qv-temp',
+      product_id: ci.product?.id,
+      sku_snapshot: ci.product?.sku || 'UNKNOWN',
+      name_snapshot: ci.product?.name || 'Товар',
+      characteristics_snapshot: {
+        'Объем': ci.product?.volume || '',
+        'Диаметр': ci.product?.diameter || '',
+        'Материал': ci.product?.material || '',
+        'Слойность': ci.product?.layers || '',
+      },
+      unit_snapshot: ci.product?.unit || 'шт',
+      image_url_snapshot: ci.product?.images?.[0]?.url || '',
+      quantity: ci.item.quantity,
+      base_unit_price: ci.unitPrice,
+      discount_percent: ci.item.discountPercent,
+      is_manual_price: ci.item.isManualPrice,
+      manual_price_reason: ci.item.manualReason,
+      item_subtotal: ci.subtotal,
+      sort_order: idx + 1,
+      created_at: new Date().toISOString(),
+    }));
+
+    const newQuoteCharges: QuoteCharge[] = calculatedCharges.map((cc, idx) => ({
+      id: `qc-${idx}`,
+      quote_version_id: 'qv-temp',
+      quote_item_id: null,
+      surcharge_rule_id: cc.rule?.id,
+      name_snapshot: cc.rule?.name || 'Доплата',
+      charge_type: cc.rule?.surcharge_type || 'one_time_fixed',
+      quantity: cc.charge.quantity,
+      unit_price: cc.charge.unitPrice,
+      total_charge: cc.totalCharge,
+      reason: cc.charge.reason,
+      created_at: new Date().toISOString(),
+    }));
+
+    return {
+      id: `q-preview-${Date.now()}`,
+      quote_number: quoteNumber,
+      deal_id: dealId || 'deal-1',
+      title,
+      recipient_name: recipientName || 'Клиент',
+      recipient_company: recipientCompany,
+      recipient_phone: recipientPhone,
+      currency: 'KZT',
+      status: 'ready',
+      valid_until: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0],
+      payment_terms: paymentTerms,
+      production_terms: productionTerms,
+      delivery_terms: deliveryTerms,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      current_version: {
+        id: `qv-preview-${Date.now()}`,
+        quote_id: `q-preview-${Date.now()}`,
+        version_number: 1,
+        subtotal,
+        total_discount: 0,
+        total_surcharges: totalCharges,
+        total_amount: grandTotal,
+        is_finalized: false,
+        created_at: new Date().toISOString(),
+        items: newQuoteItems,
+        charges: newQuoteCharges,
+      },
+    };
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      const q = constructCurrentQuote();
+      await downloadQuotePDF(q, settings);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Попробуйте позже';
+      alert(`Ошибка генерации PDF на сервере: ${msg}`);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      const q = constructCurrentQuote();
+      await previewQuotePDF(q, settings);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Попробуйте позже';
+      alert(`Ошибка предпросмотра PDF: ${msg}`);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   return (
@@ -393,14 +494,42 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
               <div><strong>Условия доставки:</strong> {deliveryTerms}</div>
             </div>
 
-            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
               <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={handlePreviewPDF}
+                disabled={isGeneratingPDF}
+              >
+                <ExternalLink size={14} />
+                <span>Открыть PDF</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPDF}
+                style={{ background: '#2563EB', borderColor: '#2563EB' }}
+              >
+                {isGeneratingPDF ? (
+                  <Loader2 size={14} className="spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>
+                  {isGeneratingPDF ? 'Генерация файла...' : 'Скачать официальный PDF на компьютер'}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => window.print()}
-                style={{ color: '#000', borderColor: '#CBD5E1' }}
+                style={{ color: '#475569', borderColor: '#CBD5E1' }}
               >
                 <Printer size={14} />
-                <span>Распечатать / Сохранить в PDF</span>
+                <span>Печать</span>
               </button>
             </div>
           </div>
