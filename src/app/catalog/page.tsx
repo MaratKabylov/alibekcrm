@@ -715,13 +715,16 @@ function CatalogContent() {
                             background: 'var(--primary-light)',
                             fontWeight: 600,
                             gap: 4,
-                            height: 30
+                            height: 30,
+                            padding: '0 10px',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0
                           }}
                           onClick={() => handleOpenQuoteWithProduct(product.id)}
                           title="Добавить этот товар в расчет коммерческого предложения"
                         >
-                          <Plus size={14} />
-                          <span>В КП</span>
+                          <Plus size={14} style={{ flexShrink: 0 }} />
+                          <span style={{ whiteSpace: 'nowrap' }}>В КП</span>
                         </button>
                       </div>
                     </div>
@@ -745,7 +748,7 @@ function CatalogContent() {
                     <th style={{ padding: '10px 14px', width: 140 }}>Мин. тираж</th>
                     <th style={{ padding: '10px 14px', minWidth: 260 }}>Ступени цен от объема (KZT/шт)</th>
                     <th style={{ padding: '10px 14px', width: 130, textAlign: 'right' }}>Лучшая цена</th>
-                    <th style={{ padding: '10px 14px', width: 100, textAlign: 'center' }}>Действие</th>
+                    <th style={{ padding: '10px 14px', width: 140, minWidth: 125, textAlign: 'center', whiteSpace: 'nowrap' }}>Действие</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -857,15 +860,15 @@ function CatalogContent() {
                         </td>
 
                         {/* Действие */}
-                        <td style={{ padding: '12px 14px', verticalAlign: 'top', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                        <td style={{ padding: '12px 14px', verticalAlign: 'top', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                             <button
                               className="btn btn-secondary btn-sm"
-                              style={{ padding: '0 8px', height: 30, color: 'var(--text-secondary)' }}
+                              style={{ padding: '0 8px', height: 30, color: 'var(--text-secondary)', flexShrink: 0 }}
                               onClick={() => handleOpenEditProduct(product)}
                               title="Редактировать товар и ступени цен"
                             >
-                              <Pencil size={13} />
+                              <Pencil size={13} style={{ flexShrink: 0 }} />
                             </button>
                             <button
                               className="btn btn-secondary btn-sm"
@@ -875,13 +878,16 @@ function CatalogContent() {
                                 background: 'var(--primary-light)',
                                 fontWeight: 600,
                                 gap: 4,
-                                height: 30
+                                height: 30,
+                                padding: '0 10px',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0
                               }}
                               onClick={() => handleOpenQuoteWithProduct(product.id)}
                               title="Сформировать коммерческое предложение"
                             >
-                              <Plus size={13} />
-                              <span>В КП</span>
+                              <Plus size={13} style={{ flexShrink: 0 }} />
+                              <span style={{ whiteSpace: 'nowrap' }}>В КП</span>
                             </button>
                           </div>
                         </td>
