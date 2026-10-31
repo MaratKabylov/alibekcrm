@@ -3,25 +3,46 @@
 -- и RLS политики для профилей пользователей
 -- ============================================================================
 
+-- 0. Убеждаемся, что тип user_role существует
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE public.user_role AS ENUM ('admin', 'manager');
+    END IF;
+END $$;
+
 -- 1. Безопасная функция обработки нового пользователя Supabase Auth
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+SET search_path = public, auth, pg_temp
+AS $$
 DECLARE
-    assigned_role user_role := 'manager';
+    assigned_role public.user_role;
     user_name TEXT;
+    user_email TEXT;
 BEGIN
+    user_email := COALESCE(new.email, '');
+
     -- Извлекаем имя из метаданных (поддержка full_name, name или берем часть email)
     user_name := COALESCE(
         NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
         NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
-        split_part(new.email, '@', 1)
+        NULLIF(split_part(user_email, '@', 1), ''),
+        'Сотрудник'
     );
 
-    -- Проверяем роль: если в метаданных передан 'admin', назначаем админа, иначе 'manager'
+    -- Безопасно определяем роль (по умолчанию 'manager')
     IF (new.raw_user_meta_data->>'role') = 'admin' THEN
-        assigned_role := 'admin';
+        assigned_role := 'admin'::public.user_role;
     ELSE
-        assigned_role := 'manager';
+        assigned_role := 'manager'::public.user_role;
+    END IF;
+
+    -- Удаляем старые записи с таким email, если они остались от предыдущих удаленных пользователей
+    IF user_email <> '' THEN
+        DELETE FROM public.profiles WHERE lower(email) = lower(user_email) AND id != new.id;
     END IF;
 
     -- Идемпотентная вставка профиля
@@ -38,7 +59,7 @@ BEGIN
     )
     VALUES (
         new.id,
-        new.email,
+        user_email,
         user_name,
         assigned_role,
         new.raw_user_meta_data->>'phone',
@@ -54,14 +75,24 @@ BEGIN
         updated_at = now();
 
     RETURN new;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Логируем предупреждение в Postgres Logs, не блокируя создание пользователя в auth.users
+        RAISE WARNING 'handle_new_user error: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+        RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Пересоздаем триггер на auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Предоставляем необходимые права
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE public.profiles TO postgres, service_role;
+GRANT SELECT, UPDATE ON TABLE public.profiles TO authenticated;
 
 -- 2. Политики RLS для profiles
 -- Пользователь всегда может прочитать свой собственный профиль
