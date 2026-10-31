@@ -140,7 +140,18 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (parsed.contacts) setContacts(parsed.contacts);
         if (parsed.leads) setLeads(parsed.leads);
         if (parsed.tasks) setTasks(parsed.tasks);
-        if (parsed.quotes) setQuotes(parsed.quotes);
+        if (parsed.quotes && Array.isArray(parsed.quotes)) {
+          const existingIds = new Set(parsed.quotes.map((q: Quote) => q.id));
+          const merged = [...parsed.quotes];
+          for (const initQ of initialQuotes) {
+            if (!existingIds.has(initQ.id)) {
+              merged.push(initQ);
+            }
+          }
+          setQuotes(merged);
+        } else {
+          setQuotes(initialQuotes);
+        }
 
         // Воронки (Pipelines)
         const loadedPipelines: Pipeline[] = (parsed.pipelines && Array.isArray(parsed.pipelines) && parsed.pipelines.length > 0)

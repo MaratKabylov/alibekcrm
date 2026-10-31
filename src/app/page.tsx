@@ -16,7 +16,8 @@ import {
   Phone, 
   MessageSquare,
   ArrowRight,
-  Plus
+  Plus,
+  Package
 } from 'lucide-react';
 import Link from 'next/link';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
@@ -24,7 +25,7 @@ import { TaskModal } from '@/components/TaskModal';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { deals, leads, tasks, companies, stages, toggleTaskStatus } = useCRM();
+  const { deals, leads, tasks, companies, stages, quotes, toggleTaskStatus } = useCRM();
 
   // Состояния модалок
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -191,6 +192,8 @@ export default function DashboardPage() {
               {activeDeals.slice(0, 5).map(deal => {
                 const comp = companies.find(c => c.id === deal.company_id);
                 const stage = stages.find(s => s.id === deal.stage_id);
+                const dealQuote = quotes.find(q => q.deal_id === deal.id);
+                const quoteItems = dealQuote?.current_version?.items || [];
 
                 return (
                   <Link
@@ -233,6 +236,16 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </div>
+
+                      {quoteItems.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#334155', marginTop: 5 }}>
+                          <Package size={12} color="var(--primary)" />
+                          <span>
+                            {quoteItems[0].name_snapshot} ({quoteItems[0].quantity.toLocaleString('ru-RU')} {quoteItems[0].unit_snapshot})
+                            {quoteItems.length > 1 ? ` +${quoteItems.length - 1} поз.` : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ textAlign: 'right' }}>

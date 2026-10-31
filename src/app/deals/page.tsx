@@ -20,12 +20,13 @@ import {
   Sliders, 
   Settings,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Package
 } from 'lucide-react';
 
 export default function DealsPage() {
   const router = useRouter();
-  const { deals, stages, pipelines, activePipelineId, setActivePipelineId, companies, contacts } = useCRM();
+  const { deals, stages, pipelines, activePipelineId, setActivePipelineId, companies, contacts, quotes } = useCRM();
 
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -239,6 +240,7 @@ export default function DealsPage() {
                 <tr>
                   <th>Название сделки</th>
                   <th>Компания / Клиент</th>
+                  <th>Состав КП / Продукция</th>
                   <th>Основной контакт</th>
                   <th>Стадия</th>
                   <th>Сумма (KZT)</th>
@@ -251,6 +253,8 @@ export default function DealsPage() {
                   const comp = companies.find(c => c.id === deal.company_id);
                   const cont = contacts.find(c => c.id === deal.contact_id);
                   const stage = stages.find(s => s.id === deal.stage_id);
+                  const dealQuote = quotes.find(q => q.deal_id === deal.id);
+                  const quoteItems = dealQuote?.current_version?.items || [];
 
                   return (
                     <tr key={deal.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenDeal(deal)}>
@@ -260,6 +264,29 @@ export default function DealsPage() {
                           <Building2 size={14} color="var(--primary)" />
                           <span>{comp?.name || '—'}</span>
                         </div>
+                      </td>
+                      <td>
+                        {quoteItems.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {quoteItems.map(item => (
+                              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                                <Package size={13} color="var(--primary)" style={{ flexShrink: 0 }} />
+                                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name_snapshot}</span>
+                                <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 11.5 }}>
+                                  ({item.quantity.toLocaleString('ru-RU')} {item.unit_snapshot})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                            {deal.notes ? (
+                              <span title={deal.notes} style={{ color: 'var(--text-secondary)' }}>
+                                {deal.notes.length > 35 ? deal.notes.slice(0, 35) + '...' : deal.notes}
+                              </span>
+                            ) : '—'}
+                          </span>
+                        )}
                       </td>
                       <td style={{ color: 'var(--text-secondary)' }}>
                         {cont ? `${cont.first_name} ${cont.last_name || ''}` : '—'}
@@ -303,7 +330,7 @@ export default function DealsPage() {
 
                 {currentPipelineDeals.length === 0 && (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '36px 12px', color: 'var(--text-muted)' }}>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '36px 12px', color: 'var(--text-muted)' }}>
                       В этой воронке продаж пока нет сделок. Нажмите «Создать сделку», чтобы добавить первую.
                     </td>
                   </tr>

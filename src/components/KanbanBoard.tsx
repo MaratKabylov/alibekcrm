@@ -15,7 +15,10 @@ import {
   Sliders, 
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Package,
+  Tag,
+  FileText
 } from 'lucide-react';
 
 interface KanbanBoardProps {
@@ -26,7 +29,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipelineSettings }: KanbanBoardProps) {
-  const { deals, stages, pipelines, activePipelineId, companies, contacts, updateDealStage } = useCRM();
+  const { deals, stages, pipelines, activePipelineId, companies, contacts, quotes, updateDealStage } = useCRM();
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   
   // Рефы и состояние для горизонтальной прокрутки
@@ -324,6 +327,8 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipeli
                   {stageDeals.map((deal) => {
                     const company = companies.find(c => c.id === deal.company_id);
                     const contact = contacts.find(c => c.id === deal.contact_id);
+                    const dealQuote = quotes.find(q => q.deal_id === deal.id);
+                    const quoteItems = dealQuote?.current_version?.items || [];
 
                     return (
                       <div
@@ -347,6 +352,82 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipeli
                             </span>
                           </div>
                         )}
+
+                        {/* Состав КП / По какому продукту обращался клиент */}
+                        {quoteItems.length > 0 ? (
+                          <div 
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              fontSize: 11.5,
+                              background: '#F1F5F9',
+                              padding: '4px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              color: '#334155',
+                              marginBottom: 8,
+                              border: '1px solid #E2E8F0',
+                            }}
+                            title={quoteItems.map(i => `${i.name_snapshot}: ${i.quantity.toLocaleString('ru-RU')} ${i.unit_snapshot} (${formatCurrency(i.item_subtotal)})`).join('\n')}
+                          >
+                            <Package size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                            <span style={{ 
+                              whiteSpace: 'nowrap', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis',
+                              fontWeight: 500,
+                              flex: 1
+                            }}>
+                              {quoteItems[0].name_snapshot}
+                            </span>
+                            <span style={{ 
+                              fontWeight: 700, 
+                              color: 'var(--primary)', 
+                              fontSize: 11,
+                              flexShrink: 0,
+                              background: '#FFFFFF',
+                              padding: '1px 5px',
+                              borderRadius: 4,
+                              border: '1px solid #CBD5E1'
+                            }}>
+                              {quoteItems[0].quantity.toLocaleString('ru-RU')} {quoteItems[0].unit_snapshot}
+                            </span>
+                            {quoteItems.length > 1 && (
+                              <span style={{ 
+                                fontSize: 10, 
+                                color: '#64748B', 
+                                fontWeight: 700,
+                                flexShrink: 0,
+                                background: '#E2E8F0',
+                                padding: '1px 4px',
+                                borderRadius: 4
+                              }}>
+                                +{quoteItems.length - 1}
+                              </span>
+                            )}
+                          </div>
+                        ) : deal.notes ? (
+                          <div 
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              fontSize: 11,
+                              color: 'var(--text-secondary)',
+                              marginBottom: 8,
+                              background: '#FAFAFA',
+                              padding: '3px 7px',
+                              borderRadius: 4,
+                              border: '1px dashed #E2E8F0'
+                            }}
+                            title={deal.notes}
+                          >
+                            <Tag size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {deal.notes}
+                            </span>
+                          </div>
+                        ) : null}
 
                         {deal.loss_reason && stage.is_lost && (
                           <div style={{

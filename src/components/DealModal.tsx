@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useCRM } from '@/lib/store';
 import { Deal } from '@/types/database';
-import { X, Calendar, DollarSign, Building2, User } from 'lucide-react';
+import { formatCurrency } from '@/lib/calculator';
+import { X, Calendar, DollarSign, Building2, User, Package, FileText, CheckCircle2 } from 'lucide-react';
 
 interface DealModalProps {
   deal?: Deal | null;
@@ -13,7 +14,11 @@ interface DealModalProps {
 }
 
 export function DealModal({ deal, isOpen, onClose, onOpenQuoteBuilder }: DealModalProps) {
-  const { addDeal, updateDeal, companies, contacts, stages, pipelines, activePipelineId } = useCRM();
+  const { addDeal, updateDeal, companies, contacts, stages, pipelines, activePipelineId, quotes } = useCRM();
+
+  const dealQuote = deal ? quotes.find(q => q.deal_id === deal.id) : null;
+  const quoteItems = dealQuote?.current_version?.items || [];
+  const quoteCharges = dealQuote?.current_version?.charges || [];
 
   const [title, setTitle] = useState(deal?.title || '');
   const [pipelineId, setPipelineId] = useState(deal?.pipeline_id || activePipelineId || pipelines[0]?.id || '');
@@ -80,7 +85,7 @@ export function DealModal({ deal, isOpen, onClose, onOpenQuoteBuilder }: DealMod
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: 540 }}>
+      <div className="modal-content" style={{ maxWidth: 620 }}>
         <div className="modal-header">
           <h3 style={{ fontSize: 17, color: 'var(--text-main)' }}>
             {deal ? 'Карточка сделки' : 'Новая сделка'}
@@ -186,6 +191,80 @@ export function DealModal({ deal, isOpen, onClose, onOpenQuoteBuilder }: DealMod
               onChange={(e) => setExpectedCloseDate(e.target.value)}
             />
           </div>
+
+          {/* Состав КП / Товары сделки */}
+          {deal && (
+            <div style={{
+              background: '#F8FAFC',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '12px 14px',
+              marginBottom: 16,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>
+                  <Package size={15} color="var(--primary)" />
+                  <span>Состав КП / Продукция</span>
+                </div>
+                {dealQuote && (
+                  <span className="badge badge-sky" style={{ fontSize: 10.5 }}>
+                    {dealQuote.quote_number} (v{dealQuote.version})
+                  </span>
+                )}
+              </div>
+
+              {quoteItems.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {quoteItems.map(item => (
+                    <div 
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: 12.5,
+                        background: '#FFFFFF',
+                        padding: '6px 10px',
+                        borderRadius: 4,
+                        border: '1px solid #E2E8F0'
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.name_snapshot}</span>
+                        <span style={{ color: 'var(--text-muted)', marginLeft: 6, fontSize: 11 }}>({item.sku_snapshot})</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          {item.quantity.toLocaleString('ru-RU')} {item.unit_snapshot} × {formatCurrency(item.base_unit_price)}
+                        </span>
+                        <strong style={{ color: 'var(--primary)' }}>{formatCurrency(item.item_subtotal)}</strong>
+                      </div>
+                    </div>
+                  ))}
+
+                  {quoteCharges.length > 0 && (
+                    <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', padding: '2px 4px' }}>
+                      Доплаты: {quoteCharges.map(c => `${c.name_snapshot} (${formatCurrency(c.total_charge)})`).join(', ')}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid #E2E8F0', fontSize: 12 }}>
+                    <span style={{ color: 'var(--emerald-dark)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <CheckCircle2 size={12} color="var(--emerald-success)" />
+                      <span>Итого по расчету КП:</span>
+                    </span>
+                    <strong style={{ color: 'var(--primary)', fontSize: 14 }}>
+                      {formatCurrency(dealQuote?.current_version?.total_amount || 0)}
+                    </strong>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '6px 0' }}>
+                  Для этой сделки КП еще не создано. Нажмите «Рассчитать КП / Тираж» ниже.
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ marginBottom: 20 }}>
             <label className="label">Заметки по сделке</label>
