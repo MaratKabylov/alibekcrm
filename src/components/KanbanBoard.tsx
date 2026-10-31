@@ -1,10 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useCRM } from '@/lib/store';
 import { Deal, DealStage } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
-import { Building2, Calendar, MoreVertical, AlertCircle, Plus, CheckCircle2, XCircle, Sliders, Settings } from 'lucide-react';
+import { 
+  Building2, 
+  Calendar, 
+  MoreVertical, 
+  AlertCircle, 
+  Plus, 
+  CheckCircle2, 
+  XCircle, 
+  Sliders, 
+  Settings,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface KanbanBoardProps {
   onOpenDeal?: (deal: Deal) => void;
@@ -17,6 +29,11 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipeli
   const { deals, stages, pipelines, activePipelineId, companies, contacts, updateDealStage } = useCRM();
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   
+  // Рефы и состояние для горизонтальной прокрутки
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   // Модалка причины проигрыша
   const [lossModalOpen, setLossModalOpen] = useState(false);
   const [pendingLostDealId, setPendingLostDealId] = useState<string | null>(null);
@@ -27,6 +44,47 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipeli
   const currentStages = stages
     .filter(s => s.pipeline_id === currentPipeId)
     .sort((a, b) => a.stage_order - b.stage_order);
+
+  // Проверка возможности скролла
+  const checkScroll = () => {
+    if (boardRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = boardRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const el = boardRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScroll, { passive: true });
+      window.addEventListener('resize', checkScroll);
+      return () => {
+        el.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, [currentStages.length]);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (boardRef.current) {
+      const scrollAmount = 340;
+      boardRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Горизонтальный скролл колесиком мыши вне карточек
+  const handleWheel = (e: React.WheelEvent) => {
+    const target = e.target as HTMLElement;
+    const isOverCards = target.closest('.kanban-cards');
+    if (!isOverCards && e.deltaY !== 0 && boardRef.current) {
+      boardRef.current.scrollLeft += e.deltaY;
+    }
+  };
 
   const handleDragStart = (dealId: string) => {
     setDraggedDealId(dealId);
@@ -74,176 +132,299 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipeli
   };
 
   return (
-    <div>
-      <div className="kanban-board">
-        {currentStages.map((stage) => {
-          const stageDeals = deals.filter(d => d.stage_id === stage.id && !d.is_archived);
-          const stageTotal = stageDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    <div style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}>
+      {/* Верхняя строка навигации по этапам */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+        padding: '2px 4px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
+          <span>Статусов в воронке: <strong style={{ color: 'var(--text-main)' }}>{currentStages.length}</strong></span>
+          {currentStages.length > 3 && (
+            <>
+              <span style={{ color: 'var(--text-muted)' }}>&bull;</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 11.5 }}>
+                Для перемещения используйте горизонтальный скролл или кнопки навигации
+              </span>
+            </>
+          )}
+        </div>
 
-          return (
-            <div
-              key={stage.id}
-              className="kanban-column"
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(stage.id)}
-            >
-              {/* Шапка колонки */}
-              <div className="kanban-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 9,
-                    height: 9,
-                    borderRadius: '50%',
-                    backgroundColor: stage.color
-                  }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>
-                    {stage.name}
-                  </span>
-                  <span style={{
-                    fontSize: 11,
-                    background: '#CBD5E1',
-                    padding: '2px 7px',
-                    borderRadius: 10,
-                    color: '#334155',
-                    fontWeight: 600
-                  }}>
-                    {stageDeals.length}
-                  </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => handleScroll('left')}
+            disabled={!canScrollLeft}
+            style={{
+              padding: '4px 8px',
+              opacity: canScrollLeft ? 1 : 0.45,
+              cursor: canScrollLeft ? 'pointer' : 'default',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Прокрутить воронку влево"
+          >
+            <ChevronLeft size={14} />
+            <span style={{ fontSize: 11.5 }}>Влево</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => handleScroll('right')}
+            disabled={!canScrollRight}
+            style={{
+              padding: '4px 8px',
+              opacity: canScrollRight ? 1 : 0.45,
+              cursor: canScrollRight ? 'pointer' : 'default',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Прокрутить воронку вправо"
+          >
+            <span style={{ fontSize: 11.5 }}>Вправо</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Обертка Канбан-доски с поддержкой плавного скролла и плавающих стрелок */}
+      <div className="kanban-board-container" onWheel={handleWheel}>
+        {/* Плавающая левая кнопка прокрутки */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => handleScroll('left')}
+            style={{
+              position: 'absolute',
+              left: -8,
+              top: '40%',
+              transform: 'translateY(-50%)',
+              zIndex: 35,
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+              border: '1px solid var(--border-subtle)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--primary)'
+            }}
+            title="Прокрутить влево"
+          >
+            <ChevronLeft size={20} />
+          </button>
+        )}
+
+        {/* Плавающая правая кнопка прокрутки */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => handleScroll('right')}
+            style={{
+              position: 'absolute',
+              right: -8,
+              top: '40%',
+              transform: 'translateY(-50%)',
+              zIndex: 35,
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+              border: '1px solid var(--border-subtle)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--primary)'
+            }}
+            title="Прокрутить вправо"
+          >
+            <ChevronRight size={20} />
+          </button>
+        )}
+
+        <div className="kanban-board" ref={boardRef}>
+          {currentStages.map((stage) => {
+            const stageDeals = deals.filter(d => d.stage_id === stage.id && !d.is_archived);
+            const stageTotal = stageDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+            return (
+              <div
+                key={stage.id}
+                className="kanban-column"
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(stage.id)}
+              >
+                {/* Шапка колонки */}
+                <div className="kanban-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 9,
+                      height: 9,
+                      borderRadius: '50%',
+                      backgroundColor: stage.color
+                    }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>
+                      {stage.name}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      background: '#CBD5E1',
+                      padding: '2px 7px',
+                      borderRadius: 10,
+                      color: '#334155',
+                      fontWeight: 600
+                    }}>
+                      {stageDeals.length}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {formatCurrency(stageTotal)}
+                    </span>
+                    {onOpenPipelineSettings && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenPipelineSettings(stage.id);
+                        }}
+                        title="Настроить статус"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: 4
+                        }}
+                      >
+                        <Sliders size={12} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    {formatCurrency(stageTotal)}
-                  </span>
-                  {onOpenPipelineSettings && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenPipelineSettings(stage.id);
-                      }}
-                      title="Настроить статус"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRadius: 4
-                      }}
-                    >
-                      <Sliders size={12} />
-                    </button>
+                {/* Карточки в колонке */}
+                <div className="kanban-cards">
+                  {stageDeals.map((deal) => {
+                    const company = companies.find(c => c.id === deal.company_id);
+                    const contact = contacts.find(c => c.id === deal.contact_id);
+
+                    return (
+                      <div
+                        key={deal.id}
+                        className="kanban-card"
+                        draggable
+                        onDragStart={() => handleDragStart(deal.id)}
+                        onClick={() => onOpenDeal && onOpenDeal(deal)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.3 }}>
+                            {deal.title}
+                          </h4>
+                        </div>
+
+                        {company && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                            <Building2 size={13} style={{ color: 'var(--primary)' }} />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {company.name}
+                            </span>
+                          </div>
+                        )}
+
+                        {deal.loss_reason && stage.is_lost && (
+                          <div style={{
+                            fontSize: 11,
+                            color: 'var(--rose-dark)',
+                            background: 'var(--rose-light)',
+                            padding: '4px 8px',
+                            borderRadius: 4,
+                            marginBottom: 8,
+                            border: '1px solid var(--rose-border)'
+                          }}>
+                            Причина: {deal.loss_reason}
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
+                            {formatCurrency(deal.amount)}
+                          </span>
+                          {deal.expected_close_date && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
+                              <Calendar size={12} />
+                              <span suppressHydrationWarning>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {stageDeals.length === 0 && (
+                    <div style={{
+                      padding: '24px 12px',
+                      textAlign: 'center',
+                      color: 'var(--text-muted)',
+                      fontSize: 12,
+                      border: '1px dashed #CBD5E1',
+                      borderRadius: 6
+                    }}>
+                      Перетащите сделку сюда
+                    </div>
                   )}
                 </div>
               </div>
+            );
+          })}
 
-              {/* Карточки в колонке */}
-              <div className="kanban-cards">
-                {stageDeals.map((deal) => {
-                  const company = companies.find(c => c.id === deal.company_id);
-                  const contact = contacts.find(c => c.id === deal.contact_id);
-
-                  return (
-                    <div
-                      key={deal.id}
-                      className="kanban-card"
-                      draggable
-                      onDragStart={() => handleDragStart(deal.id)}
-                      onClick={() => onOpenDeal && onOpenDeal(deal)}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                        <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.3 }}>
-                          {deal.title}
-                        </h4>
-                      </div>
-
-                      {company && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                          <Building2 size={13} style={{ color: 'var(--primary)' }} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {company.name}
-                          </span>
-                        </div>
-                      )}
-
-                      {deal.loss_reason && stage.is_lost && (
-                        <div style={{
-                          fontSize: 11,
-                          color: 'var(--rose-dark)',
-                          background: 'var(--rose-light)',
-                          padding: '4px 8px',
-                          borderRadius: 4,
-                          marginBottom: 8,
-                          border: '1px solid var(--rose-border)'
-                        }}>
-                          Причина: {deal.loss_reason}
-                        </div>
-                      )}
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
-                          {formatCurrency(deal.amount)}
-                        </span>
-                        {deal.expected_close_date && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
-                            <Calendar size={12} />
-                            <span suppressHydrationWarning>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {stageDeals.length === 0 && (
-                  <div style={{
-                    padding: '24px 12px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                    fontSize: 12,
-                    border: '1px dashed #CBD5E1',
-                    borderRadius: 6
-                  }}>
-                    Перетащите сделку сюда
-                  </div>
-                )}
-              </div>
+          {/* Быстрое добавление статуса в конец Канбан-доски */}
+          {onOpenPipelineSettings && (
+            <div
+              onClick={() => onOpenPipelineSettings()}
+              style={{
+                flex: '0 0 160px',
+                width: 160,
+                minWidth: 160,
+                border: '2px dashed #CBD5E1',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                padding: '24px 10px',
+                height: 'fit-content',
+                color: 'var(--primary)',
+                transition: 'all 0.2s ease',
+                marginTop: 0
+              }}
+              title="Добавить новый статус в эту воронку"
+            >
+              <Plus size={20} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4, textAlign: 'center' }}>
+                Добавить статус
+              </span>
             </div>
-          );
-        })}
-
-        {/* Быстрое добавление статуса в конец Канбан-доски */}
-        {onOpenPipelineSettings && (
-          <div
-            onClick={() => onOpenPipelineSettings()}
-            style={{
-              minWidth: 150,
-              maxWidth: 150,
-              border: '2px dashed #CBD5E1',
-              borderRadius: 'var(--radius-md)',
-              background: 'transparent',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              padding: '24px 10px',
-              height: 'fit-content',
-              color: 'var(--primary)',
-              transition: 'all 0.2s ease',
-              marginTop: 0
-            }}
-            title="Добавить новый статус в эту воронку"
-          >
-            <Plus size={20} />
-            <span style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4, textAlign: 'center' }}>
-              Добавить статус
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Модалка обязательного указания причины проигрыша сделки по ТЗ п. 3.4 */}
