@@ -91,6 +91,19 @@ interface CRMContextType {
   addQuote: (quote: Omit<Quote, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>) => Quote;
   updateQuote: (id: string, updates: Partial<Quote>) => void;
 
+  // Каталог товаров и прайс-лист
+  addProduct: (
+    product: Omit<Product, 'id' | 'created_at' | 'updated_at'>,
+    tiers?: Omit<PriceTier, 'id' | 'price_list_id' | 'product_id'>[]
+  ) => Product;
+  updateProduct: (
+    id: string,
+    updates: Partial<Product>,
+    tiers?: Omit<PriceTier, 'id' | 'price_list_id' | 'product_id'>[]
+  ) => void;
+  deleteProduct: (id: string) => void;
+  addCategory: (category: Omit<Category, 'id' | 'sort_order'>) => Category;
+
   // Сброс к демо
   resetToDefault: () => void;
 }
@@ -154,6 +167,17 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         });
         setStages(loadedStages);
 
+        // Каталог и прайс
+        if (parsed.categories && Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+          setCategories(parsed.categories);
+        }
+        if (parsed.products && Array.isArray(parsed.products) && parsed.products.length > 0) {
+          setProducts(parsed.products);
+        }
+        if (parsed.priceTiers && Array.isArray(parsed.priceTiers) && parsed.priceTiers.length > 0) {
+          setPriceTiers(parsed.priceTiers);
+        }
+
         // Сделки (Deals) - привязка к воронке
         if (parsed.deals && Array.isArray(parsed.deals)) {
           const migratedDeals = parsed.deals.map((d: Deal) => {
@@ -187,11 +211,14 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         activePipelineId,
         tasks,
         quotes,
+        categories,
+        products,
+        priceTiers,
       }));
     } catch (e) {
       console.warn('Could not save CRM local storage', e);
     }
-  }, [mounted, companies, contacts, leads, deals, pipelines, stages, activePipelineId, tasks, quotes]);
+  }, [mounted, companies, contacts, leads, deals, pipelines, stages, activePipelineId, tasks, quotes, categories, products, priceTiers]);
 
   // Воронки продаж (Pipelines)
   const addPipeline = (data: { name: string; description?: string; is_default?: boolean; copyStagesFromPipelineId?: string }): Pipeline => {
@@ -537,6 +564,69 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const addCategory = (data: Omit<Category, 'id' | 'sort_order'>): Category => {
+    const newCategory: Category = {
+      ...data,
+      id: `cat-${Date.now()}`,
+      sort_order: (categories.length + 1) * 10,
+    };
+    setCategories(prev => [...prev, newCategory]);
+    return newCategory;
+  };
+
+  const addProduct = (
+    data: Omit<Product, 'id' | 'created_at' | 'updated_at'>,
+    tiers?: Omit<PriceTier, 'id' | 'price_list_id' | 'product_id'>[]
+  ): Product => {
+    const productId = `prod-${Date.now()}`;
+    const newProduct: Product = {
+      ...data,
+      id: productId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setProducts(prev => [newProduct, ...prev]);
+
+    if (tiers && tiers.length > 0) {
+      const newTiers: PriceTier[] = tiers.map((t, idx) => ({
+        ...t,
+        id: `tier-${Date.now()}-${idx}`,
+        price_list_id: priceLists[0]?.id || 'pl-1',
+        product_id: productId,
+      }));
+      setPriceTiers(prev => [...prev, ...newTiers]);
+    }
+
+    return newProduct;
+  };
+
+  const updateProduct = (
+    id: string,
+    updates: Partial<Product>,
+    tiers?: Omit<PriceTier, 'id' | 'price_list_id' | 'product_id'>[]
+  ) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p));
+
+    if (tiers !== undefined) {
+      setPriceTiers(prev => {
+        const otherTiers = prev.filter(t => t.product_id !== id);
+        const updatedTiers: PriceTier[] = tiers.map((t, idx) => ({
+          ...t,
+          id: `tier-${Date.now()}-${idx}`,
+          price_list_id: priceLists[0]?.id || 'pl-1',
+          product_id: id,
+        }));
+        return [...otherTiers, ...updatedTiers];
+      });
+    }
+  };
+
+  const deleteProduct = (id: string) => {
+    setProducts(prev => prev.filter(p => p.id !== id));
+    setPriceTiers(prev => prev.filter(t => t.product_id !== id));
+  };
+
   const resetToDefault = () => {
     setCompanies(initialCompanies);
     setContacts(initialContacts);
@@ -547,6 +637,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     setStages(initialDealStages);
     setTasks(initialTasks);
     setQuotes(initialQuotes);
+    setCategories(initialCategories);
+    setProducts(initialProducts);
+    setPriceTiers(initialPriceTiers);
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -590,6 +683,10 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         toggleTaskStatus,
         addQuote,
         updateQuote,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        addCategory,
         resetToDefault,
       }}
     >

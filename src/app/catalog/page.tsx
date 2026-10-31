@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
+import { ProductModal } from '@/components/ProductModal';
+import { Product } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
 import { 
   Search, 
@@ -21,7 +23,8 @@ import {
   Check, 
   Info,
   DollarSign,
-  RotateCcw
+  RotateCcw,
+  Pencil
 } from 'lucide-react';
 
 function CatalogContent() {
@@ -42,6 +45,19 @@ function CatalogContent() {
 
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [selectedProductForQuote, setSelectedProductForQuote] = useState<string | null>(null);
+
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+
+  const handleOpenCreateProduct = () => {
+    setProductToEdit(null);
+    setProductModalOpen(true);
+  };
+
+  const handleOpenEditProduct = (product: Product) => {
+    setProductToEdit(product);
+    setProductModalOpen(true);
+  };
 
   // Быстрые теги поиска
   const quickTags = [
@@ -175,11 +191,18 @@ function CatalogContent() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button 
               className="btn btn-primary" 
-              onClick={() => handleOpenQuoteWithProduct()}
+              onClick={handleOpenCreateProduct}
               style={{ boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)' }}
+            >
+              <Plus size={15} />
+              <span>Добавить товар</span>
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => handleOpenQuoteWithProduct()}
             >
               <FileText size={15} />
               <span>Создать КП по каталогу</span>
@@ -669,27 +692,38 @@ function CatalogContent() {
                       )}
                     </div>
 
-                    {/* Подвал карточки с мин. заказом и кнопкой добавления в КП */}
+                    {/* Подвал карточки с мин. заказом и кнопками действий */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid #F1F5F9' }}>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                         Мин. заказ: <strong>{product.min_order_quantity.toLocaleString('ru-RU')}</strong> {product.unit} 
                         {product.pack_quantity > 1 && ` (упак. ${product.pack_quantity} шт)`}
                       </div>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ 
-                          color: 'var(--primary)', 
-                          borderColor: 'var(--primary-border)',
-                          background: 'var(--primary-light)',
-                          fontWeight: 600,
-                          gap: 5
-                        }}
-                        onClick={() => handleOpenQuoteWithProduct(product.id)}
-                        title="Добавить этот товар в расчет коммерческого предложения"
-                      >
-                        <Plus size={14} />
-                        <span>В КП</span>
-                      </button>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '0 8px', height: 30, color: 'var(--text-secondary)' }}
+                          onClick={() => handleOpenEditProduct(product)}
+                          title="Редактировать товар и ступени цен"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ 
+                            color: 'var(--primary)', 
+                            borderColor: 'var(--primary-border)',
+                            background: 'var(--primary-light)',
+                            fontWeight: 600,
+                            gap: 4,
+                            height: 30
+                          }}
+                          onClick={() => handleOpenQuoteWithProduct(product.id)}
+                          title="Добавить этот товар в расчет коммерческого предложения"
+                        >
+                          <Plus size={14} />
+                          <span>В КП</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -824,21 +858,32 @@ function CatalogContent() {
 
                         {/* Действие */}
                         <td style={{ padding: '12px 14px', verticalAlign: 'top', textAlign: 'center' }}>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ 
-                              color: 'var(--primary)', 
-                              borderColor: 'var(--primary-border)',
-                              background: 'var(--primary-light)',
-                              fontWeight: 600,
-                              gap: 4
-                            }}
-                            onClick={() => handleOpenQuoteWithProduct(product.id)}
-                            title="Сформировать коммерческое предложение"
-                          >
-                            <Plus size={13} />
-                            <span>В КП</span>
-                          </button>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '0 8px', height: 30, color: 'var(--text-secondary)' }}
+                              onClick={() => handleOpenEditProduct(product)}
+                              title="Редактировать товар и ступени цен"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ 
+                                color: 'var(--primary)', 
+                                borderColor: 'var(--primary-border)',
+                                background: 'var(--primary-light)',
+                                fontWeight: 600,
+                                gap: 4,
+                                height: 30
+                              }}
+                              onClick={() => handleOpenQuoteWithProduct(product.id)}
+                              title="Сформировать коммерческое предложение"
+                            >
+                              <Plus size={13} />
+                              <span>В КП</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -859,6 +904,19 @@ function CatalogContent() {
           onClose={() => {
             setQuoteModalOpen(false);
             setSelectedProductForQuote(null);
+          }}
+        />
+      )}
+
+      {/* Модальное окно добавления / редактирования товара */}
+      {productModalOpen && (
+        <ProductModal
+          key={productToEdit?.id || 'product-new'}
+          isOpen={productModalOpen}
+          productToEdit={productToEdit}
+          onClose={() => {
+            setProductModalOpen(false);
+            setProductToEdit(null);
           }}
         />
       )}
