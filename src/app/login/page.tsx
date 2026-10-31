@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Coffee, Lock, Mail, User, ShieldCheck, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Coffee, Lock, Mail, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UserRole } from '@/types/database';
 
@@ -12,13 +12,11 @@ function LoginForm() {
   const redirectTo = searchParams.get('redirectTo') || '/';
   const urlError = searchParams.get('error');
 
-  const { signInWithPassword, signUp, resetPassword, signInAsDemo, isConfigured } = useAuth();
+  const { signInWithPassword, resetPassword, signInAsDemo, isConfigured } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [mode, setMode] = useState<'signin' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<UserRole>('manager');
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -38,23 +36,6 @@ function LoginForm() {
         const result = await signInWithPassword(email, password);
         if (result.error) {
           setErrorMessage(result.error);
-        } else {
-          router.push(redirectTo);
-          router.refresh();
-        }
-      } else if (mode === 'signup') {
-        if (!fullName.trim()) {
-          setErrorMessage('Укажите ФИО сотрудника');
-          setLoading(false);
-          return;
-        }
-
-        const result = await signUp(email, password, fullName, role);
-        if (result.error) {
-          setErrorMessage(result.error);
-        } else if (result.requiresEmailConfirmation) {
-          setSuccessMessage('Ссылка для подтверждения регистрации отправлена на указанный email. Проверьте почту.');
-          setMode('signin');
         } else {
           router.push(redirectTo);
           router.refresh();
@@ -152,51 +133,39 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Переключатель вкладок Вход / Регистрация */}
-        <div style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--border-subtle)',
-          background: '#F1F5F9'
-        }}>
-          <button
-            type="button"
-            onClick={() => { setMode('signin'); setErrorMessage(null); }}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              border: 'none',
-              background: mode === 'signin' ? '#FFFFFF' : 'transparent',
-              fontWeight: mode === 'signin' ? 700 : 500,
-              color: mode === 'signin' ? 'var(--primary)' : 'var(--text-muted)',
-              fontSize: 13,
-              cursor: 'pointer',
-              borderBottom: mode === 'signin' ? '2px solid var(--primary)' : 'none',
-              transition: 'all 0.2s'
-            }}
-          >
-            Вход в систему
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('signup'); setErrorMessage(null); }}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              border: 'none',
-              background: mode === 'signup' ? '#FFFFFF' : 'transparent',
-              fontWeight: mode === 'signup' ? 700 : 500,
-              color: mode === 'signup' ? 'var(--primary)' : 'var(--text-muted)',
-              fontSize: 13,
-              cursor: 'pointer',
-              borderBottom: mode === 'signup' ? '2px solid var(--primary)' : 'none',
-              transition: 'all 0.2s'
-            }}
-          >
-            Регистрация
-          </button>
-        </div>
-
         <div style={{ padding: 32 }}>
+          {/* Заголовок текущего режима при сбросе пароля */}
+          {mode === 'forgot' && (
+            <div style={{ marginBottom: 20 }}>
+              <button
+                type="button"
+                onClick={() => { setMode('signin'); setErrorMessage(null); }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginBottom: 12
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>Назад ко входу</span>
+              </button>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: 'var(--text-main)' }}>
+                Восстановление пароля
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Введите ваш рабочий email, и мы отправим ссылку для сброса пароля
+              </p>
+            </div>
+          )}
+
           {/* Сообщения об ошибках / успехе */}
           {errorMessage && (
             <div style={{
@@ -235,84 +204,6 @@ function LoginForm() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Поле ФИО (только при регистрации) */}
-            {mode === 'signup' && (
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
-                  ФИО сотрудника
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Алибек Маратов"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="input"
-                    style={{ paddingLeft: 38, width: '100%', height: 40 }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Роль в системе (только при регистрации) */}
-            {mode === 'signup' && (
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
-                  Роль сотрудника
-                </label>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <label style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    border: `1px solid ${role === 'manager' ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                    borderRadius: 8,
-                    background: role === 'manager' ? '#EFF6FF' : '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 500
-                  }}>
-                    <input
-                      type="radio"
-                      name="role"
-                      value="manager"
-                      checked={role === 'manager'}
-                      onChange={() => setRole('manager')}
-                      style={{ accentColor: 'var(--primary)' }}
-                    />
-                    <span>Менеджер</span>
-                  </label>
-                  <label style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    border: `1px solid ${role === 'admin' ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                    borderRadius: 8,
-                    background: role === 'admin' ? '#EFF6FF' : '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 500
-                  }}>
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={role === 'admin'}
-                      onChange={() => setRole('admin')}
-                      style={{ accentColor: 'var(--primary)' }}
-                    />
-                    <span>Администратор</span>
-                  </label>
-                </div>
-              </div>
-            )}
-
             {/* Email */}
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
@@ -339,22 +230,20 @@ function LoginForm() {
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
                     Пароль
                   </label>
-                  {mode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => setMode('forgot')}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--primary)',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                    >
-                      Забыли пароль?
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--primary)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    Забыли пароль?
+                  </button>
                 </div>
                 <div style={{ position: 'relative' }}>
                   <Lock size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -410,11 +299,6 @@ function LoginForm() {
                   <span>Войти в CRM</span>
                   <ArrowRight size={16} />
                 </>
-              ) : mode === 'signup' ? (
-                <>
-                  <ShieldCheck size={16} />
-                  <span>Зарегистрироваться</span>
-                </>
               ) : (
                 <span>Отправить ссылку для сброса</span>
               )}
@@ -468,4 +352,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
