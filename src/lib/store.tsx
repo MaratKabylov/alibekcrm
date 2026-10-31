@@ -7,6 +7,7 @@ import {
   Lead, 
   Deal, 
   DealStage, 
+  Pipeline,
   Task, 
   Product, 
   Category, 
@@ -21,6 +22,7 @@ import {
   initialCompanies,
   initialContacts,
   initialLeads,
+  initialPipelines,
   initialDealStages,
   initialDeals,
   initialTasks,
@@ -39,6 +41,9 @@ interface CRMContextType {
   contacts: Contact[];
   leads: Lead[];
   deals: Deal[];
+  pipelines: Pipeline[];
+  activePipelineId: string;
+  setActivePipelineId: (id: string) => void;
   stages: DealStage[];
   tasks: Task[];
   categories: Category[];
@@ -49,6 +54,17 @@ interface CRMContextType {
   quotes: Quote[];
   settings: CompanySettings;
   
+  // Воронки продаж
+  addPipeline: (data: { name: string; description?: string; is_default?: boolean; copyStagesFromPipelineId?: string }) => Pipeline;
+  updatePipeline: (id: string, updates: Partial<Pipeline>) => void;
+  deletePipeline: (id: string) => { success: boolean; error?: string };
+
+  // Стадии / статусы воронки
+  addStage: (stage: Omit<DealStage, 'id'>) => DealStage;
+  updateStage: (id: string, updates: Partial<DealStage>) => void;
+  deleteStage: (id: string, fallbackStageId?: string) => { success: boolean; error?: string };
+  reorderStages: (pipelineId: string, orderedStageIds: string[]) => void;
+
   // Компании
   addCompany: (company: Omit<Company, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>) => Company;
   updateCompany: (id: string, updates: Partial<Company>) => void;
@@ -60,7 +76,7 @@ interface CRMContextType {
   // Лиды
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>) => Lead;
   updateLead: (id: string, updates: Partial<Lead>) => void;
-  convertLead: (leadId: string, options: { createDeal: boolean; dealTitle?: string; existingCompanyId?: string }) => { companyId: string; contactId: string; dealId?: string };
+  convertLead: (leadId: string, options: { createDeal: boolean; dealTitle?: string; existingCompanyId?: string; pipelineId?: string }) => { companyId: string; contactId: string; dealId?: string };
 
   // Сделки
   addDeal: (deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>) => Deal;
@@ -89,15 +105,17 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
-  const [stages] = useState<DealStage[]>(initialDealStages);
+  const [pipelines, setPipelines] = useState<Pipeline[]>(initialPipelines);
+  const [activePipelineId, setActivePipelineId] = useState<string>('pipe-1');
+  const [stages, setStages] = useState<DealStage[]>(initialDealStages);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [categories] = useState<Category[]>(initialCategories);
-  const [products] = useState<Product[]>(initialProducts);
-  const [priceLists] = useState<PriceList[]>(initialPriceLists);
-  const [priceTiers] = useState<PriceTier[]>(initialPriceTiers);
-  const [surchargeRules] = useState<SurchargeRule[]>(initialSurchargeRules);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [priceLists, setPriceLists] = useState<PriceList[]>(initialPriceLists);
+  const [priceTiers, setPriceTiers] = useState<PriceTier[]>(initialPriceTiers);
+  const [surchargeRules, setSurchargeRules] = useState<SurchargeRule[]>(initialSurchargeRules);
   const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
-  const [settings] = useState<CompanySettings>(initialCompanySettings);
+  const [settings, setSettings] = useState<CompanySettings>(initialCompanySettings);
 
   // Загрузка из localStorage
   useEffect(() => {
@@ -108,9 +126,46 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (parsed.companies) setCompanies(parsed.companies);
         if (parsed.contacts) setContacts(parsed.contacts);
         if (parsed.leads) setLeads(parsed.leads);
-        if (parsed.deals) setDeals(parsed.deals);
         if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.quotes) setQuotes(parsed.quotes);
+
+        // Воронки (Pipelines)
+        const loadedPipelines: Pipeline[] = (parsed.pipelines && Array.isArray(parsed.pipelines) && parsed.pipelines.length > 0)
+          ? parsed.pipelines
+          : initialPipelines;
+        setPipelines(loadedPipelines);
+
+        const defaultPipeId = loadedPipelines.find(p => p.is_default)?.id || loadedPipelines[0]?.id || 'pipe-1';
+        if (parsed.activePipelineId && loadedPipelines.some(p => p.id === parsed.activePipelineId)) {
+          setActivePipelineId(parsed.activePipelineId);
+        } else {
+          setActivePipelineId(defaultPipeId);
+        }
+
+        // Статусы / стадии (Stages)
+        let loadedStages: DealStage[] = (parsed.stages && Array.isArray(parsed.stages) && parsed.stages.length > 0)
+          ? parsed.stages
+          : initialDealStages;
+
+        // Миграция: убеждаемся, что у всех стадий есть pipeline_id
+        loadedStages = loadedStages.map(s => {
+          if (s.pipeline_id) return s;
+          return { ...s, pipeline_id: defaultPipeId };
+        });
+        setStages(loadedStages);
+
+        // Сделки (Deals) - привязка к воронке
+        if (parsed.deals && Array.isArray(parsed.deals)) {
+          const migratedDeals = parsed.deals.map((d: Deal) => {
+            if (d.pipeline_id) return d;
+            const dealStage = loadedStages.find(s => s.id === d.stage_id);
+            return {
+              ...d,
+              pipeline_id: dealStage?.pipeline_id || defaultPipeId,
+            };
+          });
+          setDeals(migratedDeals);
+        }
       }
     } catch (e) {
       console.warn('Could not load CRM local storage', e);
@@ -127,13 +182,147 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         contacts,
         leads,
         deals,
+        pipelines,
+        stages,
+        activePipelineId,
         tasks,
         quotes,
       }));
     } catch (e) {
       console.warn('Could not save CRM local storage', e);
     }
-  }, [mounted, companies, contacts, leads, deals, tasks, quotes]);
+  }, [mounted, companies, contacts, leads, deals, pipelines, stages, activePipelineId, tasks, quotes]);
+
+  // Воронки продаж (Pipelines)
+  const addPipeline = (data: { name: string; description?: string; is_default?: boolean; copyStagesFromPipelineId?: string }): Pipeline => {
+    const newId = `pipe-${Date.now()}`;
+    const newPipeline: Pipeline = {
+      id: newId,
+      name: data.name.trim(),
+      description: data.description?.trim() || null,
+      is_default: Boolean(data.is_default),
+      is_archived: false,
+      sort_order: (pipelines.length + 1) * 10,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (newPipeline.is_default) {
+      setPipelines(prev => prev.map(p => ({ ...p, is_default: false })));
+    }
+
+    setPipelines(prev => [...prev, newPipeline]);
+
+    // Создаем стадии для новой воронки
+    let newStages: DealStage[] = [];
+    if (data.copyStagesFromPipelineId) {
+      const sourceStages = stages.filter(s => s.pipeline_id === data.copyStagesFromPipelineId);
+      if (sourceStages.length > 0) {
+        newStages = sourceStages.map((s, idx) => ({
+          ...s,
+          id: `stage-${Date.now()}-${idx}`,
+          pipeline_id: newId,
+        }));
+      }
+    }
+
+    if (newStages.length === 0) {
+      // Стандартный набор стадий по умолчанию
+      newStages = [
+        { id: `stage-${Date.now()}-1`, pipeline_id: newId, name: 'Новая', stage_order: 10, color: '#3B82F6', is_won: false, is_lost: false },
+        { id: `stage-${Date.now()}-2`, pipeline_id: newId, name: 'Уточнение деталей', stage_order: 20, color: '#6366F1', is_won: false, is_lost: false },
+        { id: `stage-${Date.now()}-3`, pipeline_id: newId, name: 'Подготовка КП', stage_order: 30, color: '#F59E0B', is_won: false, is_lost: false },
+        { id: `stage-${Date.now()}-4`, pipeline_id: newId, name: 'Согласование условий', stage_order: 40, color: '#8B5CF6', is_won: false, is_lost: false },
+        { id: `stage-${Date.now()}-5`, pipeline_id: newId, name: 'Успешно реализовано', stage_order: 50, color: '#10B981', is_won: true, is_lost: false },
+        { id: `stage-${Date.now()}-6`, pipeline_id: newId, name: 'Закрыто и не реализовано', stage_order: 60, color: '#EF4444', is_won: false, is_lost: true },
+      ];
+    }
+
+    setStages(prev => [...prev, ...newStages]);
+    setActivePipelineId(newId);
+    return newPipeline;
+  };
+
+  const updatePipeline = (id: string, updates: Partial<Pipeline>) => {
+    setPipelines(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, ...updates, updated_at: new Date().toISOString() };
+      }
+      if (updates.is_default) {
+        return { ...p, is_default: false };
+      }
+      return p;
+    }));
+  };
+
+  const deletePipeline = (id: string): { success: boolean; error?: string } => {
+    if (pipelines.length <= 1) {
+      return { success: false, error: 'Нельзя удалить единственную воронку продаж.' };
+    }
+    const pipeDeals = deals.filter(d => d.pipeline_id === id);
+    if (pipeDeals.length > 0) {
+      return { success: false, error: `В этой воронке есть сделки (${pipeDeals.length} шт.). Перенесите или удалите их перед удалением воронки.` };
+    }
+
+    setPipelines(prev => prev.filter(p => p.id !== id));
+    setStages(prev => prev.filter(s => s.pipeline_id !== id));
+
+    if (activePipelineId === id) {
+      const remaining = pipelines.filter(p => p.id !== id);
+      setActivePipelineId(remaining[0]?.id || 'pipe-1');
+    }
+    return { success: true };
+  };
+
+  // Стадии / статусы воронки
+  const addStage = (data: Omit<DealStage, 'id'>): DealStage => {
+    const pipeStages = stages.filter(s => s.pipeline_id === data.pipeline_id);
+    const maxOrder = pipeStages.reduce((max, s) => Math.max(max, s.stage_order), 0);
+    const newStage: DealStage = {
+      ...data,
+      id: `stage-${Date.now()}`,
+      stage_order: data.stage_order || (maxOrder + 10),
+    };
+    setStages(prev => [...prev, newStage]);
+    return newStage;
+  };
+
+  const updateStage = (id: string, updates: Partial<DealStage>) => {
+    setStages(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const deleteStage = (id: string, fallbackStageId?: string): { success: boolean; error?: string } => {
+    const targetStage = stages.find(s => s.id === id);
+    if (!targetStage) return { success: false, error: 'Статус не найден.' };
+
+    const pipeStages = stages.filter(s => s.pipeline_id === targetStage.pipeline_id);
+    if (pipeStages.length <= 1) {
+      return { success: false, error: 'В воронке должен оставаться хотя бы один статус.' };
+    }
+
+    const stageDeals = deals.filter(d => d.stage_id === id);
+    if (stageDeals.length > 0) {
+      if (!fallbackStageId) {
+        return { 
+          success: false, 
+          error: `В этом статусе находится ${stageDeals.length} сделок. Выберите статус для их переноса.` 
+        };
+      }
+      setDeals(prev => prev.map(d => d.stage_id === id ? { ...d, stage_id: fallbackStageId, updated_at: new Date().toISOString() } : d));
+    }
+
+    setStages(prev => prev.filter(s => s.id !== id));
+    return { success: true };
+  };
+
+  const reorderStages = (pipelineId: string, orderedStageIds: string[]) => {
+    setStages(prev => prev.map(s => {
+      if (s.pipeline_id !== pipelineId) return s;
+      const index = orderedStageIds.indexOf(s.id);
+      if (index === -1) return s;
+      return { ...s, stage_order: (index + 1) * 10 };
+    }));
+  };
 
   const addCompany = (data: Omit<Company, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Company => {
     const newCompany: Company = {
@@ -188,7 +377,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
 
   const convertLead = (
     leadId: string, 
-    options: { createDeal: boolean; dealTitle?: string; existingCompanyId?: string }
+    options: { createDeal: boolean; dealTitle?: string; existingCompanyId?: string; pipelineId?: string }
   ) => {
     const lead = leads.find(l => l.id === leadId);
     if (!lead) throw new Error('Лид не найден');
@@ -223,11 +412,16 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
 
     // 3. Создаем сделку при необходимости
     if (options.createDeal) {
+      const targetPipeId = options.pipelineId || activePipelineId || pipelines.find(p => p.is_default)?.id || pipelines[0]?.id;
+      const targetStages = stages.filter(s => s.pipeline_id === targetPipeId).sort((a, b) => a.stage_order - b.stage_order);
+      const firstStage = targetStages[0] || stages[0];
+
       const newDeal = addDeal({
         title: options.dealTitle || `Сделка: ${lead.company_name || lead.name}`,
         company_id: companyId,
         contact_id: newContact.id,
-        stage_id: stages[0].id, // Новая
+        pipeline_id: targetPipeId,
+        stage_id: firstStage ? firstStage.id : stages[0]?.id,
         amount: 0,
         currency: 'KZT',
         notes: `Сконвертировано из лида. Запрос: ${lead.interested_products || ''}`,
@@ -248,8 +442,11 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addDeal = (data: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Deal => {
+    const stage = stages.find(s => s.id === data.stage_id);
+    const pipelineId = data.pipeline_id || stage?.pipeline_id || activePipelineId || pipelines[0]?.id;
     const newDeal: Deal = {
       ...data,
+      pipeline_id: pipelineId,
       id: `deal-${Date.now()}`,
       version: 1,
       is_archived: false,
@@ -261,11 +458,13 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateDealStage = (dealId: string, stageId: string, lossReason?: string) => {
+    const stage = stages.find(s => s.id === stageId);
     setDeals(prev => prev.map(d => {
       if (d.id !== dealId) return d;
       return {
         ...d,
         stage_id: stageId,
+        pipeline_id: stage?.pipeline_id || d.pipeline_id,
         loss_reason: lossReason || d.loss_reason,
         updated_at: new Date().toISOString(),
       };
@@ -273,7 +472,15 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateDeal = (id: string, updates: Partial<Deal>) => {
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } : d));
+    setDeals(prev => prev.map(d => {
+      if (d.id !== id) return d;
+      let pipelineId = updates.pipeline_id || d.pipeline_id;
+      if (updates.stage_id && !updates.pipeline_id) {
+        const stage = stages.find(s => s.id === updates.stage_id);
+        if (stage?.pipeline_id) pipelineId = stage.pipeline_id;
+      }
+      return { ...d, ...updates, pipeline_id: pipelineId, updated_at: new Date().toISOString() };
+    }));
   };
 
   const addTask = (data: Omit<Task, 'id' | 'created_at' | 'updated_at'>): Task => {
@@ -335,6 +542,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     setContacts(initialContacts);
     setLeads(initialLeads);
     setDeals(initialDeals);
+    setPipelines(initialPipelines);
+    setActivePipelineId('pipe-1');
+    setStages(initialDealStages);
     setTasks(initialTasks);
     setQuotes(initialQuotes);
     localStorage.removeItem(STORAGE_KEY);
@@ -347,6 +557,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         contacts,
         leads,
         deals,
+        pipelines,
+        activePipelineId,
+        setActivePipelineId,
         stages,
         tasks,
         categories,
@@ -356,6 +569,13 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         surchargeRules,
         quotes,
         settings,
+        addPipeline,
+        updatePipeline,
+        deletePipeline,
+        addStage,
+        updateStage,
+        deleteStage,
+        reorderStages,
         addCompany,
         updateCompany,
         addContact,

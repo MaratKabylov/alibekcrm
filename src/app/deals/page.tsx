@@ -6,19 +6,47 @@ import { useCRM } from '@/lib/store';
 import { Header } from '@/components/Header';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { QuoteBuilderModal } from '@/components/QuoteBuilderModal';
+import { PipelineSettingsModal } from '@/components/PipelineSettingsModal';
 import { Deal } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
-import { Plus, LayoutGrid, List, Building2, Calendar, FileText } from 'lucide-react';
+import { 
+  Plus, 
+  LayoutGrid, 
+  List, 
+  Building2, 
+  Calendar, 
+  FileText, 
+  GitBranch, 
+  Sliders, 
+  Settings,
+  Layers,
+  ChevronDown
+} from 'lucide-react';
 
 export default function DealsPage() {
   const router = useRouter();
-  const { deals, stages, companies, contacts } = useCRM();
+  const { deals, stages, pipelines, activePipelineId, setActivePipelineId, companies, contacts } = useCRM();
 
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [activeQuoteDealId, setActiveQuoteDealId] = useState<string>('');
 
-  const totalPipelineAmount = deals
+  // Модалка настройки воронок и статусов
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'pipelines' | 'stages'>('pipelines');
+  const [targetStageIdForModal, setTargetStageIdForModal] = useState<string | undefined>(undefined);
+
+  const currentPipeline = pipelines.find(p => p.id === activePipelineId) || pipelines[0];
+  const pipelineStages = stages
+    .filter(s => s.pipeline_id === (currentPipeline?.id || ''))
+    .sort((a, b) => a.stage_order - b.stage_order);
+
+  // Сделки активной воронки
+  const currentPipelineDeals = deals.filter(d => 
+    d.pipeline_id === currentPipeline?.id || pipelineStages.some(s => s.id === d.stage_id)
+  );
+
+  const totalPipelineAmount = currentPipelineDeals
     .filter(d => !stages.find(s => s.id === d.stage_id)?.is_lost)
     .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
@@ -35,16 +63,23 @@ export default function DealsPage() {
     setQuoteModalOpen(true);
   };
 
+  const handleOpenPipelineSettings = (stageId?: string) => {
+    setTargetStageIdForModal(stageId);
+    setSettingsInitialTab(stageId ? 'stages' : 'stages');
+    setSettingsModalOpen(true);
+  };
+
   return (
     <>
       <Header />
 
       <div className="page-wrapper">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        {/* Заголовок страницы и переключатель видов */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700 }}>Сделки и воронка продаж</h1>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-              Всего в пайплайне: <strong style={{ color: 'var(--primary)' }}>{formatCurrency(totalPipelineAmount)}</strong> ({deals.length} сделок)
+              В воронке <strong>«{currentPipeline?.name}»</strong>: <strong style={{ color: 'var(--primary)' }}>{formatCurrency(totalPipelineAmount)}</strong> ({currentPipelineDeals.length} сделок)
             </p>
           </div>
 
@@ -96,8 +131,106 @@ export default function DealsPage() {
           </div>
         </div>
 
+        {/* Панель переключения воронок и настройки этапов */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#FFFFFF',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
+          padding: '8px 14px',
+          marginBottom: 16,
+          boxShadow: 'var(--shadow-sm)',
+          flexWrap: 'wrap',
+          gap: 12
+        }}>
+          {/* Кнопки переключения воронок */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+              <GitBranch size={15} color="var(--primary)" />
+              <span>Воронка:</span>
+            </span>
+            {pipelines.map(pipe => {
+              const isActive = pipe.id === (currentPipeline?.id);
+              const pStages = stages.filter(s => s.pipeline_id === pipe.id);
+              const count = deals.filter(d => d.pipeline_id === pipe.id || pStages.some(s => s.id === d.stage_id)).length;
+
+              return (
+                <button
+                  key={pipe.id}
+                  type="button"
+                  onClick={() => setActivePipelineId(pipe.id)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    fontSize: 12.5,
+                    fontWeight: isActive ? 700 : 500,
+                    background: isActive ? 'var(--primary)' : '#F1F5F9',
+                    color: isActive ? '#FFFFFF' : 'var(--text-main)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span>{pipe.name}</span>
+                  <span style={{
+                    fontSize: 11,
+                    background: isActive ? 'rgba(255,255,255,0.25)' : '#E2E8F0',
+                    color: isActive ? '#FFFFFF' : '#475569',
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    fontWeight: 600
+                  }}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Кнопки управления воронками и статусами */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setSettingsInitialTab('stages');
+                setSettingsModalOpen(true);
+              }}
+              style={{ gap: 6 }}
+              title="Добавить или настроить статусы текущей воронки"
+            >
+              <Sliders size={13} />
+              <span>Настроить статусы ({pipelineStages.length})</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setSettingsInitialTab('pipelines');
+                setSettingsModalOpen(true);
+              }}
+              style={{ gap: 6 }}
+              title="Управление всеми воронками продаж"
+            >
+              <GitBranch size={13} />
+              <span>Все воронки ({pipelines.length})</span>
+            </button>
+          </div>
+        </div>
+
         {viewMode === 'kanban' ? (
-          <KanbanBoard onOpenDeal={handleOpenDeal} onCreateDeal={handleCreateDeal} />
+          <KanbanBoard 
+            pipelineId={currentPipeline?.id}
+            onOpenDeal={handleOpenDeal} 
+            onCreateDeal={handleCreateDeal} 
+            onOpenPipelineSettings={handleOpenPipelineSettings}
+          />
         ) : (
           /* ТАБЛИЧНОЕ ПРЕДСТАВЛЕНИЕ (ТЗ п. 3.4) */
           <div className="data-table-wrapper">
@@ -114,7 +247,7 @@ export default function DealsPage() {
                 </tr>
               </thead>
               <tbody>
-                {deals.map(deal => {
+                {currentPipelineDeals.map(deal => {
                   const comp = companies.find(c => c.id === deal.company_id);
                   const cont = contacts.find(c => c.id === deal.contact_id);
                   const stage = stages.find(s => s.id === deal.stage_id);
@@ -167,11 +300,29 @@ export default function DealsPage() {
                     </tr>
                   );
                 })}
+
+                {currentPipelineDeals.length === 0 && (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '36px 12px', color: 'var(--text-muted)' }}>
+                      В этой воронке продаж пока нет сделок. Нажмите «Создать сделку», чтобы добавить первую.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Модалка настроек воронок и статусов */}
+      {settingsModalOpen && (
+        <PipelineSettingsModal
+          isOpen={settingsModalOpen}
+          initialTab={settingsInitialTab}
+          targetPipelineId={currentPipeline?.id}
+          onClose={() => setSettingsModalOpen(false)}
+        />
+      )}
 
       {quoteModalOpen && (
         <QuoteBuilderModal

@@ -14,17 +14,33 @@ function NewDealForm() {
   const initialCompanyId = searchParams.get('company_id') || '';
   const initialContactId = searchParams.get('contact_id') || '';
 
-  const { addDeal, companies, contacts, stages } = useCRM();
+  const { addDeal, companies, contacts, stages, pipelines, activePipelineId } = useCRM();
 
   const [title, setTitle] = useState('');
+  const [pipelineId, setPipelineId] = useState(activePipelineId || pipelines[0]?.id || '');
   const [companyId, setCompanyId] = useState(initialCompanyId || companies[0]?.id || '');
   const [contactId, setContactId] = useState(initialContactId || '');
-  const [stageId, setStageId] = useState(stages[0]?.id || '');
+
+  const availableStages = stages
+    .filter(s => s.pipeline_id === pipelineId)
+    .sort((a, b) => a.stage_order - b.stage_order);
+
+  const [stageId, setStageId] = useState(availableStages[0]?.id || stages[0]?.id || '');
   const [amount, setAmount] = useState<number>(0);
   const [expectedCloseDate, setExpectedCloseDate] = useState('');
   const [notes, setNotes] = useState('');
 
   const filteredContacts = contacts.filter(c => !companyId || c.company_id === companyId);
+
+  const handlePipelineChange = (newPipeId: string) => {
+    setPipelineId(newPipeId);
+    const pipeStages = stages
+      .filter(s => s.pipeline_id === newPipeId)
+      .sort((a, b) => a.stage_order - b.stage_order);
+    if (pipeStages.length > 0) {
+      setStageId(pipeStages[0].id);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +53,7 @@ function NewDealForm() {
       title: title.trim(),
       company_id: companyId,
       contact_id: contactId || null,
+      pipeline_id: pipelineId,
       stage_id: stageId,
       amount: Number(amount) || 0,
       currency: 'KZT',
@@ -99,18 +116,34 @@ function NewDealForm() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
           <div>
+            <label className="label">Воронка продаж *</label>
+            <select
+              className="select"
+              required
+              value={pipelineId}
+              onChange={(e) => handlePipelineChange(e.target.value)}
+            >
+              {pipelines.map(p => (
+                <option key={p.id} value={p.id}>{p.name} {p.is_default ? '(По умолчанию)' : ''}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="label">Стадия сделки</label>
             <select
               className="select"
               value={stageId}
               onChange={(e) => setStageId(e.target.value)}
             >
-              {stages.map(s => (
+              {availableStages.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
+        </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
           <div>
             <label className="label">Сумма (KZT)</label>
             <input

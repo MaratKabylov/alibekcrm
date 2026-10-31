@@ -91,8 +91,20 @@ export interface Lead {
   updated_at: string;
 }
 
+export interface Pipeline {
+  id: string;
+  name: string;
+  description?: string | null;
+  is_default: boolean;
+  is_archived?: boolean;
+  sort_order?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface DealStage {
   id: string;
+  pipeline_id?: string;
   name: string;
   stage_order: number;
   color: string;
@@ -106,6 +118,7 @@ export interface Deal {
   company_id: string;
   contact_id?: string | null;
   assigned_to?: string | null;
+  pipeline_id?: string | null;
   stage_id: string;
   expected_close_date?: string | null;
   amount: number;
@@ -121,6 +134,7 @@ export interface Deal {
   company?: Company;
   contact?: Contact;
   stage?: DealStage;
+  pipeline?: Pipeline;
 }
 
 export type TaskType = 'call' | 'message' | 'meeting' | 'other';

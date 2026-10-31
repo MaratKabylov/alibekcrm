@@ -4,10 +4,26 @@ import React, { useState, useEffect } from 'react';
 import { useCRM } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { Header } from '@/components/Header';
-import { Settings, Building2, CreditCard, FileText, CheckCircle2, Palette, Sun, Moon, Shield, User, LogOut, KeyRound } from 'lucide-react';
+import { PipelineSettingsModal } from '@/components/PipelineSettingsModal';
+import { 
+  Settings, 
+  Building2, 
+  CreditCard, 
+  FileText, 
+  CheckCircle2, 
+  Palette, 
+  Sun, 
+  Moon, 
+  Shield, 
+  User, 
+  LogOut, 
+  KeyRound,
+  GitBranch,
+  Sliders
+} from 'lucide-react';
 
 export default function SettingsPage() {
-  const { settings } = useCRM();
+  const { settings, pipelines, stages, deals } = useCRM();
   const { profile, user, signOut, isConfigured, resetPassword } = useAuth();
 
   const [companyName, setCompanyName] = useState(settings.company_name);
@@ -19,6 +35,9 @@ export default function SettingsPage() {
   const [bankDetails, setBankDetails] = useState(settings.bank_details || '');
   const [validityDays, setValidityDays] = useState(settings.default_quote_validity_days);
   const [sidebarTheme, setSidebarTheme] = useState<'classic' | 'light'>('classic');
+
+  const [pipelineModalOpen, setPipelineModalOpen] = useState(false);
+  const [pipelineModalTab, setPipelineModalTab] = useState<'pipelines' | 'stages'>('pipelines');
 
   const [saved, setSaved] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -222,6 +241,103 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Секция: Воронки продаж и статусы */}
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <GitBranch size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: 15, margin: 0 }}>Воронки продаж и статусы сделок</h3>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  setPipelineModalTab('pipelines');
+                  setPipelineModalOpen(true);
+                }}
+              >
+                <Sliders size={14} />
+                <span>Управление воронками ({pipelines.length})</span>
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
+              Создавайте индивидуальные воронки продаж под разные типы клиентов (розница, сети, брендирование) и настраивайте свои статусы сделок.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {pipelines.map(pipe => {
+                const pStages = stages.filter(s => s.pipeline_id === pipe.id).sort((a, b) => a.stage_order - b.stage_order);
+                const pDeals = deals.filter(d => d.pipeline_id === pipe.id || pStages.some(s => s.id === d.stage_id));
+
+                return (
+                  <div
+                    key={pipe.id}
+                    style={{
+                      background: 'var(--bg-subtle, #F8FAFC)',
+                      borderRadius: 8,
+                      padding: '12px 14px',
+                      border: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 10
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <strong style={{ fontSize: 13.5, color: 'var(--text-main)' }}>{pipe.name}</strong>
+                        {pipe.is_default && (
+                          <span style={{ fontSize: 10.5, fontWeight: 600, background: '#ECFDF5', color: '#047857', padding: '1px 6px', borderRadius: 8 }}>
+                            По умолчанию
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                        {pStages.map(s => (
+                          <span
+                            key={s.id}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontSize: 11,
+                              background: '#FFFFFF',
+                              border: '1px solid var(--border-subtle)',
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              color: 'var(--text-secondary)'
+                            }}
+                          >
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: s.color }} />
+                            <span>{s.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {pDeals.length} сделок
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setPipelineModalTab('stages');
+                          setPipelineModalOpen(true);
+                        }}
+                      >
+                        <Sliders size={13} />
+                        <span>Настроить статусы</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Реквизиты компании */}
           <div className="card" style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -333,6 +449,14 @@ export default function SettingsPage() {
           </div>
         </form>
       </div>
+
+      {pipelineModalOpen && (
+        <PipelineSettingsModal
+          isOpen={pipelineModalOpen}
+          initialTab={pipelineModalTab}
+          onClose={() => setPipelineModalOpen(false)}
+        />
+      )}
     </>
   );
 }

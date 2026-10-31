@@ -39,13 +39,16 @@ export default function DashboardPage() {
   }, []);
 
   // Метрики
-  const wonStage = stages.find(s => s.is_won);
-  const lostStage = stages.find(s => s.is_lost);
-
-  const activeDeals = deals.filter(d => d.stage_id !== wonStage?.id && d.stage_id !== lostStage?.id);
+  const activeDeals = deals.filter(d => {
+    const stage = stages.find(s => s.id === d.stage_id);
+    return stage && !stage.is_won && !stage.is_lost;
+  });
   const activeDealsAmount = activeDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
-  const wonDeals = deals.filter(d => d.stage_id === wonStage?.id);
+  const wonDeals = deals.filter(d => {
+    const stage = stages.find(s => s.id === d.stage_id);
+    return stage?.is_won;
+  });
   const wonDealsAmount = wonDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
   const newLeads = leads.filter(l => l.status === 'new');

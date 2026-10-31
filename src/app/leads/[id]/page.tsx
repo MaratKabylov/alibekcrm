@@ -30,7 +30,7 @@ function LeadDetailContent() {
   const router = useRouter();
   const leadId = params?.id as string;
 
-  const { leads, companies, contacts, tasks, updateLead, convertLead, addTask, toggleTaskStatus } = useCRM();
+  const { leads, companies, contacts, tasks, pipelines, activePipelineId, updateLead, convertLead, addTask, toggleTaskStatus } = useCRM();
 
   const lead = leads.find(l => l.id === leadId);
 
@@ -47,6 +47,7 @@ function LeadDetailContent() {
   // Конвертация
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [createDeal, setCreateDeal] = useState(true);
+  const [conversionPipelineId, setConversionPipelineId] = useState(activePipelineId || pipelines[0]?.id || '');
   const [dealTitle, setDealTitle] = useState('');
 
   // Задачи
@@ -126,6 +127,7 @@ function LeadDetailContent() {
         createDeal,
         dealTitle: dealTitle || `Поставка: ${lead.company_name || lead.name}`,
         existingCompanyId: selectedCompanyId || undefined,
+        pipelineId: conversionPipelineId,
       });
 
       alert('Лид успешно сконвертирован в компанию, контакт и сделку!');
@@ -435,13 +437,28 @@ function LeadDetailContent() {
 
                   {createDeal && (
                     <div style={{ marginBottom: 16 }}>
-                      <label className="label">Название сделки</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={dealTitle}
-                        onChange={(e) => setDealTitle(e.target.value)}
-                      />
+                      <div style={{ marginBottom: 10 }}>
+                        <label className="label">Воронка продаж</label>
+                        <select
+                          className="select"
+                          value={conversionPipelineId}
+                          onChange={(e) => setConversionPipelineId(e.target.value)}
+                        >
+                          {pipelines.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} {p.is_default ? '(По умолчанию)' : ''}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="label">Название сделки</label>
+                        <input
+                          type="text"
+                          className="input"
+                          value={dealTitle}
+                          onChange={(e) => setDealTitle(e.target.value)}
+                        />
+                      </div>
                     </div>
                   )}
 

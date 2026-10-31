@@ -2,23 +2,31 @@
 
 import React, { useState } from 'react';
 import { useCRM } from '@/lib/store';
-import { Deal } from '@/types/database';
+import { Deal, DealStage } from '@/types/database';
 import { formatCurrency } from '@/lib/calculator';
-import { Building2, Calendar, MoreVertical, AlertCircle, Plus, CheckCircle2, XCircle } from 'lucide-react';
+import { Building2, Calendar, MoreVertical, AlertCircle, Plus, CheckCircle2, XCircle, Sliders, Settings } from 'lucide-react';
 
 interface KanbanBoardProps {
   onOpenDeal?: (deal: Deal) => void;
   onCreateDeal?: () => void;
+  pipelineId?: string;
+  onOpenPipelineSettings?: (stageId?: string) => void;
 }
 
-export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
-  const { deals, stages, companies, contacts, updateDealStage } = useCRM();
+export function KanbanBoard({ onOpenDeal, onCreateDeal, pipelineId, onOpenPipelineSettings }: KanbanBoardProps) {
+  const { deals, stages, pipelines, activePipelineId, companies, contacts, updateDealStage } = useCRM();
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   
   // Модалка причины проигрыша
   const [lossModalOpen, setLossModalOpen] = useState(false);
   const [pendingLostDealId, setPendingLostDealId] = useState<string | null>(null);
+  const [pendingLostStageId, setPendingLostStageId] = useState<string | null>(null);
   const [lossReason, setLossReason] = useState('');
+
+  const currentPipeId = pipelineId || activePipelineId || pipelines[0]?.id || '';
+  const currentStages = stages
+    .filter(s => s.pipeline_id === currentPipeId)
+    .sort((a, b) => a.stage_order - b.stage_order);
 
   const handleDragStart = (dealId: string) => {
     setDraggedDealId(dealId);
@@ -36,6 +44,7 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
     // Если перетаскиваем в "Проиграна" — требуем причину по ТЗ п. 3.4 и 10.4
     if (targetStage?.is_lost) {
       setPendingLostDealId(draggedDealId);
+      setPendingLostStageId(stageId);
       setLossModalOpen(true);
     } else {
       updateDealStage(draggedDealId, stageId);
@@ -50,20 +59,24 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
       return;
     }
 
-    const lostStage = stages.find(s => s.is_lost);
+    const lostStage = (pendingLostStageId && stages.find(s => s.id === pendingLostStageId)) || 
+                      currentStages.find(s => s.is_lost) || 
+                      stages.find(s => s.is_lost);
+
     if (lostStage) {
       updateDealStage(pendingLostDealId, lostStage.id, lossReason.trim());
     }
     
     setLossModalOpen(false);
     setPendingLostDealId(null);
+    setPendingLostStageId(null);
     setLossReason('');
   };
 
   return (
     <div>
       <div className="kanban-board">
-        {stages.map((stage) => {
+        {currentStages.map((stage) => {
           const stageDeals = deals.filter(d => d.stage_id === stage.id && !d.is_archived);
           const stageTotal = stageDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
@@ -97,9 +110,34 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                     {stageDeals.length}
                   </span>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  {formatCurrency(stageTotal)}
-                </span>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    {formatCurrency(stageTotal)}
+                  </span>
+                  {onOpenPipelineSettings && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenPipelineSettings(stage.id);
+                      }}
+                      title="Настроить статус"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        borderRadius: 4
+                      }}
+                    >
+                      <Sliders size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Карточки в колонке */}
@@ -176,6 +214,36 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
             </div>
           );
         })}
+
+        {/* Быстрое добавление статуса в конец Канбан-доски */}
+        {onOpenPipelineSettings && (
+          <div
+            onClick={() => onOpenPipelineSettings()}
+            style={{
+              minWidth: 150,
+              maxWidth: 150,
+              border: '2px dashed #CBD5E1',
+              borderRadius: 'var(--radius-md)',
+              background: 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              padding: '24px 10px',
+              height: 'fit-content',
+              color: 'var(--primary)',
+              transition: 'all 0.2s ease',
+              marginTop: 0
+            }}
+            title="Добавить новый статус в эту воронку"
+          >
+            <Plus size={20} />
+            <span style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4, textAlign: 'center' }}>
+              Добавить статус
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Модалка обязательного указания причины проигрыша сделки по ТЗ п. 3.4 */}
@@ -208,6 +276,7 @@ export function KanbanBoard({ onOpenDeal, onCreateDeal }: KanbanBoardProps) {
                 onClick={() => {
                   setLossModalOpen(false);
                   setPendingLostDealId(null);
+                  setPendingLostStageId(null);
                   setLossReason('');
                 }}
               >

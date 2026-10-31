@@ -12,7 +12,7 @@ interface LeadModalProps {
 }
 
 export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
-  const { addLead, updateLead, convertLead, companies, contacts } = useCRM();
+  const { addLead, updateLead, convertLead, companies, contacts, pipelines, activePipelineId } = useCRM();
 
   const [name, setName] = useState(lead?.name || '');
   const [companyName, setCompanyName] = useState(lead?.company_name || '');
@@ -27,6 +27,7 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [createDeal, setCreateDeal] = useState(true);
+  const [conversionPipelineId, setConversionPipelineId] = useState(activePipelineId || pipelines[0]?.id || '');
   const [dealTitle, setDealTitle] = useState('');
 
   if (!isOpen) return null;
@@ -79,6 +80,7 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
         createDeal,
         dealTitle: dealTitle || `Поставка: ${lead.company_name || lead.name}`,
         existingCompanyId: selectedCompanyId || undefined,
+        pipelineId: conversionPipelineId,
       });
       alert('Лид успешно сконвертирован в компанию, контакт и сделку!');
       onClose();
@@ -152,15 +154,29 @@ export function LeadModal({ lead, isOpen, onClose }: LeadModalProps) {
             </div>
 
             {createDeal && (
-              <div style={{ marginBottom: 20 }}>
-                <label className="label">Название сделки</label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder={`Сделка: ${companyName || name}`}
-                  value={dealTitle}
-                  onChange={(e) => setDealTitle(e.target.value)}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+                <div>
+                  <label className="label">Воронка продаж</label>
+                  <select
+                    className="select"
+                    value={conversionPipelineId}
+                    onChange={(e) => setConversionPipelineId(e.target.value)}
+                  >
+                    {pipelines.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} {p.is_default ? '(По умолчанию)' : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Название сделки</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder={`Сделка: ${companyName || name}`}
+                    value={dealTitle}
+                    onChange={(e) => setDealTitle(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 

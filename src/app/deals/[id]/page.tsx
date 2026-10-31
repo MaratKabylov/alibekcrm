@@ -30,12 +30,13 @@ function DealDetailContent() {
   const router = useRouter();
   const dealId = params?.id as string;
 
-  const { deals, stages, companies, contacts, quotes, tasks, updateDeal, updateDealStage, addTask, toggleTaskStatus } = useCRM();
+  const { deals, stages, pipelines, companies, contacts, quotes, tasks, updateDeal, updateDealStage, addTask, toggleTaskStatus } = useCRM();
 
   const deal = deals.find(d => d.id === dealId);
 
   // Form states
   const [title, setTitle] = useState('');
+  const [pipelineId, setPipelineId] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [contactId, setContactId] = useState('');
   const [stageId, setStageId] = useState('');
@@ -56,6 +57,8 @@ function DealDetailContent() {
   useEffect(() => {
     if (deal) {
       setTitle(deal.title || '');
+      const defaultPipeId = deal.pipeline_id || stages.find(s => s.id === deal.stage_id)?.pipeline_id || pipelines[0]?.id || '';
+      setPipelineId(defaultPipeId);
       setCompanyId(deal.company_id || '');
       setContactId(deal.contact_id || '');
       setStageId(deal.stage_id || '');
@@ -89,6 +92,10 @@ function DealDetailContent() {
 
   const selectedCompany = companies.find(c => c.id === companyId);
   const filteredContacts = contacts.filter(c => !companyId || c.company_id === companyId);
+  const currentPipeline = pipelines.find(p => p.id === pipelineId) || pipelines[0];
+  const pipelineStages = stages
+    .filter(s => s.pipeline_id === (currentPipeline?.id || ''))
+    .sort((a, b) => a.stage_order - b.stage_order);
   const currentStage = stages.find(s => s.id === stageId);
   const dealQuotes = quotes.filter(q => q.deal_id === deal.id);
   const dealTasks = tasks.filter(t => t.deal_id === deal.id);
@@ -104,6 +111,7 @@ function DealDetailContent() {
       title,
       company_id: companyId,
       contact_id: contactId || null,
+      pipeline_id: pipelineId,
       stage_id: stageId,
       amount: Number(amount) || 0,
       expected_close_date: expectedCloseDate || null,
@@ -198,8 +206,12 @@ function DealDetailContent() {
 
         {/* Воронка стадий (Pipeline Bar) */}
         <div className="card" style={{ padding: '12px 16px', marginBottom: 20, overflowX: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
+            <span>Воронка: <strong style={{ color: 'var(--primary)' }}>{currentPipeline?.name}</strong></span>
+            <span>Статус: <strong style={{ color: currentStage?.color }}>{currentStage?.name}</strong></span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 680 }}>
-            {stages.map((stage) => {
+            {pipelineStages.map((stage) => {
               const isCurrent = stage.id === stageId;
               const isPassed = !currentStage?.is_lost && (stage.stage_order <= (currentStage?.stage_order || 0));
 
@@ -260,6 +272,41 @@ function DealDetailContent() {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Поставка стаканов 350 мл"
                 />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                <div>
+                  <label className="label">Воронка продаж *</label>
+                  <select
+                    className="select"
+                    value={pipelineId}
+                    onChange={(e) => {
+                      const newPipeId = e.target.value;
+                      setPipelineId(newPipeId);
+                      const pStages = stages.filter(s => s.pipeline_id === newPipeId).sort((a, b) => a.stage_order - b.stage_order);
+                      if (pStages.length > 0 && !pStages.some(s => s.id === stageId)) {
+                        setStageId(pStages[0].id);
+                      }
+                    }}
+                  >
+                    {pipelines.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} {p.is_default ? '(По умолчанию)' : ''}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Текущий статус / этап</label>
+                  <select
+                    className="select"
+                    value={stageId}
+                    onChange={(e) => handleStageClick(e.target.value)}
+                  >
+                    {pipelineStages.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
