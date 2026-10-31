@@ -53,11 +53,13 @@ CREATE INDEX IF NOT EXISTS idx_deals_pipeline_id ON deals(pipeline_id);
 -- 5. RLS (Row Level Security) для pipelines
 ALTER TABLE pipelines ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Все авторизованные пользователи могут просматривать воронки" ON pipelines;
 CREATE POLICY "Все авторизованные пользователи могут просматривать воронки"
 ON pipelines FOR SELECT
 TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Все авторизованные пользователи могут добавлять и изменять воронки" ON pipelines;
 CREATE POLICY "Все авторизованные пользователи могут добавлять и изменять воронки"
 ON pipelines FOR ALL
 TO authenticated
