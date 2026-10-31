@@ -20,6 +20,7 @@ interface AuthContextType {
   ) => Promise<{ error: string | null; requiresEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   refreshProfile: () => Promise<void>;
   signInAsDemo: (role?: UserRole) => void;
 }
@@ -286,7 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/callback?next=/settings`,
+        redirectTo: `${origin}/auth/callback?next=/login?mode=update-password`,
       });
 
       if (error) {
@@ -296,6 +297,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Ошибка отправки ссылки сброса пароля';
+      return { error: msg };
+    }
+  };
+
+  // Установка нового пароля (после перехода по ссылке из письма)
+  const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
+    if (!isConfigured) {
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ошибка обновления пароля';
       return { error: msg };
     }
   };
@@ -321,6 +344,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         resetPassword,
+        updatePassword,
         refreshProfile,
         signInAsDemo,
       }}

@@ -1,29 +1,53 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Coffee, Lock, Mail, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { 
+  Coffee, 
+  Lock, 
+  Mail, 
+  Eye, 
+  EyeOff, 
+  AlertCircle, 
+  CheckCircle2, 
+  ArrowRight, 
+  KeyRound,
+  ShieldCheck 
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { UserRole } from '@/types/database';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/';
   const urlError = searchParams.get('error');
+  const urlMode = searchParams.get('mode');
 
-  const { signInWithPassword, resetPassword, signInAsDemo, isConfigured } = useAuth();
+  const { signInWithPassword, resetPassword, updatePassword, isConfigured } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'forgot'>('signin');
+  const [mode, setMode] = useState<'signin' | 'forgot' | 'update-password'>(
+    urlMode === 'update-password' ? 'update-password' : 'signin'
+  );
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     urlError === 'auth_callback_failed' ? 'Ошибка подтверждения сессии. Попробуйте войти повторно.' : null
   );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (urlMode === 'update-password') {
+      setMode('update-password');
+    }
+  }, [urlMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +65,39 @@ function LoginForm() {
           router.refresh();
         }
       } else if (mode === 'forgot') {
+        if (!email.trim()) {
+          setErrorMessage('Пожалуйста, введите ваш рабочий email');
+          setLoading(false);
+          return;
+        }
+
         const result = await resetPassword(email);
         if (result.error) {
           setErrorMessage(result.error);
         } else {
-          setSuccessMessage('Инструкция по сбросу пароля отправлена на ваш email.');
-          setMode('signin');
+          setSuccessMessage('Ссылка для сброса пароля отправлена на указанный email. Проверьте входящие сообщения.');
+        }
+      } else if (mode === 'update-password') {
+        if (newPassword.length < 6) {
+          setErrorMessage('Пароль должен содержать минимум 6 символов');
+          setLoading(false);
+          return;
+        }
+        if (newPassword !== confirmPassword) {
+          setErrorMessage('Пароли не совпадают');
+          setLoading(false);
+          return;
+        }
+
+        const result = await updatePassword(newPassword);
+        if (result.error) {
+          setErrorMessage(result.error);
+        } else {
+          setSuccessMessage('Пароль успешно обновлен! Выполняется вход в CRM...');
+          setTimeout(() => {
+            router.push(redirectTo);
+            router.refresh();
+          }, 1500);
         }
       }
     } catch (err: unknown) {
@@ -54,12 +105,6 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoLogin = (selectedRole: UserRole) => {
-    signInAsDemo(selectedRole);
-    router.push(redirectTo);
-    router.refresh();
   };
 
   return (
@@ -133,35 +178,83 @@ function LoginForm() {
           </div>
         </div>
 
+        {/* Переключатель вкладок Вход в систему / Сброс пароля */}
+        {mode !== 'update-password' && (
+          <div style={{
+            display: 'flex',
+            borderBottom: '1px solid var(--border-subtle)',
+            background: '#F1F5F9'
+          }}>
+            <button
+              type="button"
+              onClick={() => { setMode('signin'); setErrorMessage(null); setSuccessMessage(null); }}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: 'none',
+                background: mode === 'signin' ? '#FFFFFF' : 'transparent',
+                fontWeight: mode === 'signin' ? 700 : 500,
+                color: mode === 'signin' ? 'var(--primary)' : 'var(--text-muted)',
+                fontSize: 13,
+                cursor: 'pointer',
+                borderBottom: mode === 'signin' ? '2px solid var(--primary)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              Вход в систему
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setErrorMessage(null); setSuccessMessage(null); }}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: 'none',
+                background: mode === 'forgot' ? '#FFFFFF' : 'transparent',
+                fontWeight: mode === 'forgot' ? 700 : 500,
+                color: mode === 'forgot' ? 'var(--primary)' : 'var(--text-muted)',
+                fontSize: 13,
+                cursor: 'pointer',
+                borderBottom: mode === 'forgot' ? '2px solid var(--primary)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              Сброс пароля
+            </button>
+          </div>
+        )}
+
         <div style={{ padding: 32 }}>
-          {/* Заголовок текущего режима при сбросе пароля */}
-          {mode === 'forgot' && (
-            <div style={{ marginBottom: 20 }}>
-              <button
-                type="button"
-                onClick={() => { setMode('signin'); setErrorMessage(null); }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--primary)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: 0,
-                  marginBottom: 12
-                }}
-              >
-                <ArrowLeft size={16} />
-                <span>Назад ко входу</span>
-              </button>
+          {/* Режим установки нового пароля (после клика по ссылке из email) */}
+          {mode === 'update-password' && (
+            <div style={{ marginBottom: 20, textAlign: 'center' }}>
+              <div style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: '#EFF6FF',
+                color: 'var(--primary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 8
+              }}>
+                <KeyRound size={20} />
+              </div>
               <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: 'var(--text-main)' }}>
-                Восстановление пароля
+                Установка нового пароля
               </h2>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                Введите ваш рабочий email, и мы отправим ссылку для сброса пароля
+                Введите новый пароль для вашей учётной записи в CRM
+              </p>
+            </div>
+          )}
+
+          {/* Описание в режиме сброса пароля */}
+          {mode === 'forgot' && (
+            <div style={{ marginBottom: 18 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Укажите ваш рабочий email, привязанный к аккаунту сотрудника. Мы отправим вам ссылку для безопасного восстановления доступа.
               </p>
             </div>
           )}
@@ -204,27 +297,29 @@ function LoginForm() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Email */}
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
-                Рабочий email
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  type="email"
-                  required
-                  placeholder="alibek@crm.kz"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input"
-                  style={{ paddingLeft: 38, width: '100%', height: 40 }}
-                />
+            {/* Поле Email (для входа и запроса сброса) */}
+            {mode !== 'update-password' && (
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
+                  Рабочий email
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="email"
+                    required
+                    placeholder="alibek@crm.kz"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input"
+                    style={{ paddingLeft: 38, width: '100%', height: 40 }}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Password */}
-            {mode !== 'forgot' && (
+            {/* Поле Пароль для входа */}
+            {mode === 'signin' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
@@ -232,7 +327,7 @@ function LoginForm() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setMode('forgot')}
+                    onClick={() => { setMode('forgot'); setErrorMessage(null); setSuccessMessage(null); }}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -278,6 +373,65 @@ function LoginForm() {
               </div>
             )}
 
+            {/* Поля для установки нового пароля */}
+            {mode === 'update-password' && (
+              <>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
+                    Новый пароль
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      placeholder="Минимум 6 символов"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="input"
+                      style={{ paddingLeft: 38, paddingRight: 38, width: '100%', height: 40 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex'
+                      }}
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-main)', marginBottom: 6 }}>
+                    Повторите новый пароль
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="input"
+                      style={{ paddingLeft: 38, width: '100%', height: 40 }}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Кнопка отправки формы */}
             <button
               type="submit"
@@ -299,42 +453,40 @@ function LoginForm() {
                   <span>Войти в CRM</span>
                   <ArrowRight size={16} />
                 </>
+              ) : mode === 'forgot' ? (
+                <>
+                  <KeyRound size={16} />
+                  <span>Отправить ссылку для сброса</span>
+                </>
               ) : (
-                <span>Отправить ссылку для сброса</span>
+                <>
+                  <ShieldCheck size={16} />
+                  <span>Сохранить новый пароль</span>
+                </>
               )}
             </button>
           </form>
 
-          {/* Быстрый демо-вход для тестирования без базы данных */}
-          <div style={{
-            marginTop: 24,
-            paddingTop: 20,
-            borderTop: '1px solid var(--border-subtle)'
-          }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10, fontWeight: 500 }}>
-              Быстрый вход для тестирования:
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {/* Ссылка возврата ко входу в режиме сброса */}
+          {mode === 'forgot' && (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
               <button
                 type="button"
-                onClick={() => handleDemoLogin('admin')}
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: 12, justifyContent: 'center' }}
-                title="Войти как Алибек М. (Администратор)"
+                onClick={() => { setMode('signin'); setErrorMessage(null); setSuccessMessage(null); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline'
+                }}
               >
-                Администратор
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('manager')}
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: 12, justifyContent: 'center' }}
-                title="Войти как Данияр К. (Менеджер)"
-              >
-                Менеджер
+                Вспомнили пароль? Вернуться ко входу
               </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
