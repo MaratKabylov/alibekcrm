@@ -10,6 +10,7 @@ import { Quote } from '@/types/database';
 
 interface QuoteBuilderModalProps {
   dealId?: string;
+  initialProductId?: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -30,7 +31,7 @@ interface DraftCharge {
   reason?: string;
 }
 
-export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModalProps) {
+export function QuoteBuilderModal({ dealId, initialProductId, isOpen, onClose }: QuoteBuilderModalProps) {
   const { deals, companies, contacts, products, priceTiers, surchargeRules, settings, addQuote } = useCRM();
 
   const currentDeal = deals.find(d => d.id === dealId);
@@ -50,7 +51,7 @@ export function QuoteBuilderModal({ dealId, isOpen, onClose }: QuoteBuilderModal
   // Список выбранных позиций
   const [draftItems, setDraftItems] = useState<DraftItem[]>([
     {
-      productId: products[0]?.id || 'prod-1',
+      productId: initialProductId || products[0]?.id || 'prod-1',
       quantity: 5000,
       isManualPrice: false,
       discountPercent: 0,
