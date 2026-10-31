@@ -3,8 +3,10 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 export function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return Boolean(
     url &&
     key &&
@@ -21,7 +23,10 @@ export function isSupabaseConfigured(): boolean {
 export async function createClient() {
   const cookieStore = await cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'placeholder-anon-key';
 
   return createSSRServerClient(supabaseUrl, supabaseKey, {
     cookies: {
@@ -43,18 +48,21 @@ export async function createClient() {
 }
 
 /**
- * Клиент с сервисными правами (Service Role Key), используемый
+ * Клиент с сервисными правами (Service Role Key / Secret Key), используемый
  * только на сервере для привилегированных операций в обход RLS.
  */
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const secretKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    '';
 
-  if (!supabaseUrl || !serviceRoleKey || supabaseUrl.includes('placeholder')) {
+  if (!supabaseUrl || !secretKey || supabaseUrl.includes('placeholder')) {
     return null;
   }
 
-  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  return createSupabaseClient(supabaseUrl, secretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -68,7 +76,9 @@ export function createAdminClient() {
 export function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
   const supabaseKey =
+    process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     '';
 

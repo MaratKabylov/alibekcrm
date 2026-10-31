@@ -25,25 +25,32 @@
 
 ### Шаг 1. Получение API-ключей в консоли Supabase
 1. Перейдите в [Supabase Dashboard](https://supabase.com/dashboard) и выберите ваш проект (или создайте новый).
-2. Откройте раздел **Project Settings** -> **API**.
+2. Откройте раздел **Project Settings** -> **API** (или **API Keys**).
 3. Скопируйте:
    - **Project URL**
-   - **anon / public key**
-   - **service_role key** (секретный ключ, используется только на сервере)
+   - **Publishable Key** (начинается с `pk_...` или `sb_publishable_...`, либо прежний `anon / public` JWT-ключ)
+   - **Secret Key** (начинается с `sk_...` или `sb_secret_...`, либо прежний `service_role` ключ для серверных скриптов)
 
 ### Шаг 2. Настройка переменных окружения
 В файле `.env.local` замените плейсхолдеры на реальные ключи:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxxxxxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Publishable key (новый формат Supabase) или anon key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=pk_xxxxxxxxxxxxxxxxxxxx
+# Либо классический anon key:
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Секретный ключ для сервера (Secret Key или Service Role Key)
+SUPABASE_SECRET_KEY=sk_xxxxxxxxxxxxxxxxxxxx
+# SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 NEXT_PUBLIC_DEFAULT_CURRENCY=KZT
 NEXT_PUBLIC_TIMEZONE=Asia/Almaty
 ```
 
-> **Примечание:** Пока в `.env.local` указаны плейсхолдеры, CRM автоматически работает в безопасном **демо-режиме** (доступен быстрый вход в 1 клик для разработки). Как только вы укажете реальный URL Supabase, система автоматически переключится на боевой Supabase Auth!
+> **Примечание:** CRM поддерживает как новый **Publishable Key** (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), так и классический `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Пока в `.env.local` указаны плейсхолдеры, CRM автоматически работает в безопасном **демо-режиме** (доступен быстрый вход в 1 клик для разработки). Как только вы укажете реальный URL Supabase и ключ, система автоматически переключится на боевой Supabase Auth!
 
 ### Шаг 3. Применение миграций в базе данных Supabase
 В Supabase Dashboard перейдите в **SQL Editor** и выполните по очереди файлы миграций из папки `supabase/migrations/`:
