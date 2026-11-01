@@ -324,3 +324,44 @@ export interface CompanySettings {
   created_at: string;
   updated_at: string;
 }
+
+
+export type NotificationType = 
+  | 'task_overdue' 
+  | 'task_due_today' 
+  | 'task_created' 
+  | 'task_completed'
+  | 'deal_stage_changed' 
+  | 'deal_won' 
+  | 'deal_lost' 
+  | 'deal_created'
+  | 'quote_status' 
+  | 'quote_created'
+  | 'quote_expired' 
+  | 'lead_new' 
+  | 'lead_converted' 
+  | 'system';
+
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  is_read: boolean;
+  link?: string;
+  entity_type?: 'task' | 'deal' | 'quote' | 'lead' | 'company' | 'system';
+  entity_id?: string;
+  created_at: string;
+}
+
+export interface NotificationPreferences {
+  sound_enabled: boolean;
+  toasts_enabled: boolean;
+  tasks_overdue_alerts: boolean;
+  deals_alerts: boolean;
+  leads_alerts: boolean;
+  quotes_alerts: boolean;
+}

@@ -19,11 +19,27 @@ import {
   LogOut, 
   KeyRound,
   GitBranch,
-  Sliders
+  Sliders,
+  Bell,
+  Volume2,
+  VolumeX,
+  Trash2,
+  Sparkles,
+  Info
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { settings, pipelines, stages, deals } = useCRM();
+  const { 
+    settings, 
+    pipelines, 
+    stages, 
+    deals, 
+    notificationPreferences, 
+    updateNotificationPreferences, 
+    addNotification, 
+    clearAllNotifications, 
+    notifications 
+  } = useCRM();
   const { profile, user, signOut, isConfigured, resetPassword } = useAuth();
 
   const [companyName, setCompanyName] = useState(settings.company_name);
@@ -41,6 +57,19 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [testSent, setTestSent] = useState(false);
+
+  const handleSendTestNotification = () => {
+    addNotification({
+      title: 'Тестовое уведомление CRM',
+      message: 'Оповещения внутри сайта работают штатно! Звук и всплывающее окно проверены.',
+      type: 'system',
+      priority: 'medium',
+      link: '/tasks',
+    });
+    setTestSent(true);
+    setTimeout(() => setTestSent(false), 3500);
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('alibek_crm_sidebar_theme') as 'classic' | 'light' | null;
@@ -434,6 +463,187 @@ export default function SettingsPage() {
                 value={validityDays}
                 onChange={(e) => setValidityDays(Number(e.target.value) || 14)}
               />
+            </div>
+          </div>
+
+          {/* Секция: Уведомления на сайте */}
+          <div id="notifications" className="card" style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Bell size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: 15, margin: 0 }}>Уведомления на сайте</h3>
+              </div>
+              <span style={{ fontSize: 11, background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: 8, fontWeight: 600 }}>
+                Только внутри сайта
+              </span>
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Настройка оповещений в режиме реального времени. Все события отображаются на сайте через всплывающие окна (тосты) и колокольчик в шапке.
+            </p>
+
+            {/* Информационная плашка */}
+            <div
+              style={{
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                borderRadius: 8,
+                padding: '10px 14px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                fontSize: 12.5,
+                color: '#1E40AF',
+                lineHeight: 1.45,
+              }}
+            >
+              <Info size={16} color="#2563EB" style={{ marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <strong>Режим работы «Только на сайте»:</strong> Отправка на email, SMS или в сторонние сервисы не выполняется. Все оповещения о просроченных задачах, смене статусов КП и выигранных сделках генерируются и сохраняются внутри браузера сотрудника.
+              </div>
+            </div>
+
+            {/* Список переключателей */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                    Всплывающие подсказки (Toast) в углу экрана
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Показывать всплывающее окно в правом нижнем углу при появлении нового события
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.toasts_enabled}
+                  onChange={(e) => updateNotificationPreferences({ toasts_enabled: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>Звуковое сопровождение (Web Audio)</span>
+                    {notificationPreferences.sound_enabled ? <Volume2 size={14} color="#2563EB" /> : <VolumeX size={14} color="#94A3B8" />}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Воспроизводить мягкий перезвон при новых уведомлениях и предупреждениях
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.sound_enabled}
+                  onChange={(e) => updateNotificationPreferences({ sound_enabled: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                    Контроль просроченных задач и дедлайнов
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Автоматически напоминать о звонках и встречах, у которых истек срок
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.tasks_overdue_alerts}
+                  onChange={(e) => updateNotificationPreferences({ tasks_overdue_alerts: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                    Оповещения об этапах сделок и победах
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Уведомлять при перемещении сделки по воронке, согласовании и выигранных заказах
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.deals_alerts}
+                  onChange={(e) => updateNotificationPreferences({ deals_alerts: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                    Входящие лиды и конвертации
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Информировать при создании новых заявок и конвертации в клиентов
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.leads_alerts}
+                  onChange={(e) => updateNotificationPreferences({ leads_alerts: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                    Коммерческие предложения (КП)
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Оповещать об отправке клиенту, утверждении цен и истечении срока действия КП
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.quotes_alerts}
+                  onChange={(e) => updateNotificationPreferences({ quotes_alerts: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
+              </label>
+            </div>
+
+            {/* Кнопки действий: тест и очистка */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleSendTestNotification}
+                  className="btn btn-secondary btn-sm"
+                  style={{ gap: 6 }}
+                >
+                  <Sparkles size={13} color="var(--primary)" />
+                  <span>Проверить уведомление</span>
+                </button>
+                {testSent && (
+                  <span style={{ fontSize: 12, color: 'var(--emerald-dark)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle2 size={14} /> Отправлено в браузер!
+                  </span>
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Очистить всю историю внутрисайтовых уведомлений?')) {
+                      clearAllNotifications();
+                    }
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ gap: 6, color: '#DC2626' }}
+                >
+                  <Trash2 size={13} />
+                  <span>Очистить журнал ({notifications.length})</span>
+                </button>
+              )}
             </div>
           </div>
 

@@ -3,13 +3,19 @@
 import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
+import { NotificationToaster } from '@/components/NotificationToaster';
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/auth');
 
   if (isAuthPage) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <NotificationToaster />
+      </>
+    );
   }
 
   return (
@@ -18,6 +24,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       <main className="main-content">
         {children}
       </main>
+      <NotificationToaster />
     </div>
   );
 }
