@@ -72,7 +72,11 @@ interface CRMContextType {
   clearAllNotifications: () => void;
   updateNotificationPreferences: (prefs: Partial<NotificationPreferences>) => void;
   dismissToast: (id: string) => void;
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
   // Воронки продаж
   addPipeline: (data: { name: string; description?: string; is_default?: boolean; copyStagesFromPipelineId?: string }) => Pipeline;
   updatePipeline: (id: string, updates: Partial<Pipeline>) => void;
@@ -150,9 +154,14 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<CompanySettings>(initialCompanySettings);
 
   // Состояние внутрисайтовых уведомлений
+<<<<<<< HEAD
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(initialNotificationPreferences);
   const [dismissedAlertKeys, setDismissedAlertKeys] = useState<string[]>([]);
+=======
+  const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(initialNotificationPreferences);
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
   const [toasts, setToasts] = useState<AppNotification[]>([]);
 
   const unreadNotificationsCount = notifications.filter(n => !n.is_read).length;
@@ -180,6 +189,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
           setQuotes(initialQuotes);
         }
 
+<<<<<<< HEAD
           // Уведомления и ключи скрытых алертов
           if (parsed.dismissedAlertKeys && Array.isArray(parsed.dismissedAlertKeys)) {
             setDismissedAlertKeys(parsed.dismissedAlertKeys);
@@ -194,6 +204,23 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
           if (parsed.notificationPreferences) {
             setNotificationPreferences(prev => ({ ...prev, ...parsed.notificationPreferences }));
           }
+=======
+        // Уведомления и предпочтения
+        if (parsed.notifications && Array.isArray(parsed.notifications)) {
+          setNotifications(parsed.notifications);
+        } else {
+          setNotifications(initialNotifications);
+        }
+        if (parsed.notificationPreferences) {
+          setNotificationPreferences(prev => ({ ...prev, ...parsed.notificationPreferences }));
+        }
+
+        // Воронки (Pipelines)
+        const loadedPipelines: Pipeline[] = (parsed.pipelines && Array.isArray(parsed.pipelines) && parsed.pipelines.length > 0)
+          ? parsed.pipelines
+          : initialPipelines;
+        setPipelines(loadedPipelines);
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
 
           // Воронки (Pipelines)
           const loadedPipelines: Pipeline[] = (parsed.pipelines && Array.isArray(parsed.pipelines) && parsed.pipelines.length > 0)
@@ -269,13 +296,173 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         priceTiers,
         notifications,
         notificationPreferences,
+<<<<<<< HEAD
         dismissedAlertKeys,
         notifications_initialized: true,
+=======
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
       }));
     } catch (e) {
       console.warn('Could not save CRM local storage', e);
     }
+<<<<<<< HEAD
 }, [mounted, companies, contacts, leads, deals, pipelines, stages, activePipelineId, tasks, quotes, categories, products, priceTiers, notifications, notificationPreferences, dismissedAlertKeys]);
+=======
+  }, [mounted, companies, contacts, leads, deals, pipelines, stages, activePipelineId, tasks, quotes, categories, products, priceTiers, notifications, notificationPreferences]);
+
+  // Управление внутрисайтовыми уведомлениями
+  const dismissToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const addNotification = (item: Omit<AppNotification, 'id' | 'created_at' | 'is_read'> & { id?: string }): AppNotification => {
+    const newNotif: AppNotification = {
+      id: item.id || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      priority: item.priority || 'medium',
+      is_read: false,
+      link: item.link,
+      entity_type: item.entity_type,
+      entity_id: item.entity_id,
+      created_at: new Date().toISOString(),
+    };
+
+    setNotifications(prev => [newNotif, ...prev]);
+
+    // Всплывающие тосты на сайте
+    if (notificationPreferences.toasts_enabled) {
+      setToasts(prev => [newNotif, ...prev.filter(t => t.id !== newNotif.id).slice(0, 4)]);
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== newNotif.id));
+      }, 5000);
+    }
+
+    // Звуковой перезвон на сайте
+    if (notificationPreferences.sound_enabled) {
+      if (newNotif.priority === 'urgent' || newNotif.type === 'task_overdue') {
+        playUrgentNotificationSound();
+      } else {
+        playNotificationSound();
+      }
+    }
+
+    return newNotif;
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  };
+
+  const deleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setToasts([]);
+  };
+
+  const updateNotificationPreferences = (prefs: Partial<NotificationPreferences>) => {
+    setNotificationPreferences(prev => ({ ...prev, ...prefs }));
+  };
+
+  // Автоматический мониторинг событий внутри CRM (просроченные задачи, задачи на сегодня, истекшие КП)
+  useEffect(() => {
+    if (!mounted) return;
+
+    const runSystemChecks = () => {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      // 1. Проверка просроченных задач
+      if (notificationPreferences.tasks_overdue_alerts) {
+        tasks.forEach(task => {
+          if (task.status === 'pending' && new Date(task.due_date) < now) {
+            setNotifications(currentNotifs => {
+              const alreadyNotified = currentNotifs.some(n => 
+                n.entity_id === task.id && 
+                n.type === 'task_overdue' &&
+                n.created_at.startsWith(todayStr)
+              );
+              if (alreadyNotified) return currentNotifs;
+
+              const urgentAlert: AppNotification = {
+                id: `notif-overdue-${task.id}-${todayStr}`,
+                title: 'Внимание: просрочена задача!',
+                message: `Задача «${task.title}» просрочена. Срок был: ${new Date(task.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`,
+                type: 'task_overdue',
+                priority: 'urgent',
+                is_read: false,
+                link: '/tasks',
+                entity_type: 'task',
+                entity_id: task.id,
+                created_at: new Date().toISOString(),
+              };
+
+              if (notificationPreferences.toasts_enabled) {
+                setToasts(prev => [urgentAlert, ...prev.filter(t => t.id !== urgentAlert.id).slice(0, 4)]);
+                setTimeout(() => {
+                  setToasts(prev => prev.filter(t => t.id !== urgentAlert.id));
+                }, 6000);
+              }
+              if (notificationPreferences.sound_enabled) {
+                playUrgentNotificationSound();
+              }
+
+              return [urgentAlert, ...currentNotifs];
+            });
+          }
+        });
+      }
+
+      // 2. Проверка истекающих / истекших КП
+      if (notificationPreferences.quotes_alerts) {
+        quotes.forEach(quote => {
+          if ((quote.status === 'ready' || quote.status === 'sent') && quote.valid_until && quote.valid_until < todayStr) {
+            setNotifications(currentNotifs => {
+              const alreadyNotified = currentNotifs.some(n => 
+                n.entity_id === quote.id && 
+                n.type === 'quote_expired'
+              );
+              if (alreadyNotified) return currentNotifs;
+
+              const expiredAlert: AppNotification = {
+                id: `notif-quote-exp-${quote.id}`,
+                title: 'Истек срок действия КП',
+                message: `Срок действия предложения ${quote.quote_number} (${quote.recipient_company || quote.recipient_name}) подошел к концу.`,
+                type: 'quote_expired',
+                priority: 'medium',
+                is_read: false,
+                link: '/quotes',
+                entity_type: 'quote',
+                entity_id: quote.id,
+                created_at: new Date().toISOString(),
+              };
+
+              return [expiredAlert, ...currentNotifs];
+            });
+          }
+        });
+      }
+    };
+
+    const initialTimeout = setTimeout(runSystemChecks, 1200);
+    const interval = setInterval(runSystemChecks, 60000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [mounted, tasks, quotes, notificationPreferences]);
+
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
 
 // Управление внутрисайтовыми уведомлениями
 const dismissToast = (id: string) => {
@@ -405,9 +592,123 @@ useEffect(() => {
               created_at: new Date().toISOString(),
             };
 
+<<<<<<< HEAD
             return [urgentAlert, ...currentNotifs];
           });
         }
+=======
+    const pipeStages = stages.filter(s => s.pipeline_id === targetStage.pipeline_id);
+    if (pipeStages.length <= 1) {
+      return { success: false, error: 'В воронке должен оставаться хотя бы один статус.' };
+    }
+
+    const stageDeals = deals.filter(d => d.stage_id === id);
+    if (stageDeals.length > 0) {
+      if (!fallbackStageId) {
+        return { 
+          success: false, 
+          error: `В этом статусе находится ${stageDeals.length} сделок. Выберите статус для их переноса.` 
+        };
+      }
+      setDeals(prev => prev.map(d => d.stage_id === id ? { ...d, stage_id: fallbackStageId, updated_at: new Date().toISOString() } : d));
+    }
+
+    setStages(prev => prev.filter(s => s.id !== id));
+    return { success: true };
+  };
+
+  const reorderStages = (pipelineId: string, orderedStageIds: string[]) => {
+    setStages(prev => prev.map(s => {
+      if (s.pipeline_id !== pipelineId) return s;
+      const index = orderedStageIds.indexOf(s.id);
+      if (index === -1) return s;
+      return { ...s, stage_order: (index + 1) * 10 };
+    }));
+  };
+
+  const addCompany = (data: Omit<Company, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Company => {
+    const newCompany: Company = {
+      ...data,
+      id: `comp-${Date.now()}`,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setCompanies(prev => [newCompany, ...prev]);
+    return newCompany;
+  };
+
+  const updateCompany = (id: string, updates: Partial<Company>) => {
+    setCompanies(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
+  };
+
+  const addContact = (data: Omit<Contact, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Contact => {
+    const newContact: Contact = {
+      ...data,
+      id: `cont-${Date.now()}`,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setContacts(prev => [newContact, ...prev]);
+    return newContact;
+  };
+
+  const updateContact = (id: string, updates: Partial<Contact>) => {
+    setContacts(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
+  };
+
+  const addLead = (data: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Lead => {
+    const newLead: Lead = {
+      ...data,
+      id: `lead-${Date.now()}`,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setLeads(prev => [newLead, ...prev]);
+
+    if (notificationPreferences.leads_alerts) {
+      addNotification({
+        title: 'Новый лид в CRM',
+        message: `${newLead.name}${newLead.company_name ? ` (${newLead.company_name})` : ''}`,
+        type: 'lead_new',
+        priority: 'medium',
+        link: `/leads/${newLead.id}`,
+        entity_type: 'lead',
+        entity_id: newLead.id,
+      });
+    }
+
+    return newLead;
+  };
+
+  const updateLead = (id: string, updates: Partial<Lead>) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates, updated_at: new Date().toISOString() } : l));
+  };
+
+  const convertLead = (
+    leadId: string, 
+    options: { createDeal: boolean; dealTitle?: string; existingCompanyId?: string; pipelineId?: string }
+  ) => {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) throw new Error('Лид не найден');
+
+    let companyId = options.existingCompanyId;
+
+    // 1. Создаем компанию, если не выбрана существующая
+    if (!companyId) {
+      const newComp = addCompany({
+        name: lead.company_name || lead.name,
+        client_type: 'кофейня',
+        phone: lead.phone,
+        email: lead.email,
+        tags: ['из лида'],
+        notes: `Сконвертирован из лида: ${lead.name}. Интерес: ${lead.interested_products || 'не указан'}`,
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
       });
     }
 
@@ -774,6 +1075,7 @@ const updateDealStage = (dealId: string, stageId: string, lossReason?: string) =
         entity_type: 'deal',
         entity_id: dealId,
       });
+<<<<<<< HEAD
     } else if (stage?.is_lost) {
       addNotification({
         title: 'Сделка проиграна',
@@ -793,10 +1095,194 @@ const updateDealStage = (dealId: string, stageId: string, lossReason?: string) =
         link: `/deals/${dealId}`,
         entity_type: 'deal',
         entity_id: dealId,
+=======
+      dealId = newDeal.id;
+    }
+
+    // 4. Обновляем статус лида на "qualified"
+    updateLead(leadId, {
+      status: 'qualified',
+      converted_company_id: companyId,
+      converted_contact_id: newContact.id,
+      converted_deal_id: dealId,
+      converted_at: new Date().toISOString(),
+    });
+
+    if (notificationPreferences.leads_alerts) {
+      addNotification({
+        title: 'Лид успешно сконвертирован',
+        message: `Лид «${lead.name}» переведен в базу клиентов и контактов`,
+        type: 'lead_converted',
+        priority: 'high',
+        link: `/companies`,
+        entity_type: 'lead',
+        entity_id: leadId,
+      });
+    }
+
+    return { companyId, contactId: newContact.id, dealId };
+  };
+
+  const addDeal = (data: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Deal => {
+    const stage = stages.find(s => s.id === data.stage_id);
+    const pipelineId = data.pipeline_id || stage?.pipeline_id || activePipelineId || pipelines[0]?.id;
+    const newDeal: Deal = {
+      ...data,
+      pipeline_id: pipelineId,
+      id: `deal-${Date.now()}`,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setDeals(prev => [newDeal, ...prev]);
+
+    if (notificationPreferences.deals_alerts) {
+      addNotification({
+        title: 'Создана новая сделка',
+        message: `Сделка «${newDeal.title}» добавлена в воронку`,
+        type: 'deal_created',
+        priority: 'medium',
+        link: `/deals/${newDeal.id}`,
+        entity_type: 'deal',
+        entity_id: newDeal.id,
+      });
+    }
+
+    return newDeal;
+  };
+
+  const updateDealStage = (dealId: string, stageId: string, lossReason?: string) => {
+    const stage = stages.find(s => s.id === stageId);
+    const currentDeal = deals.find(d => d.id === dealId);
+
+    if (currentDeal && currentDeal.stage_id !== stageId && notificationPreferences.deals_alerts) {
+      if (stage?.is_won) {
+        addNotification({
+          title: 'Сделка успешно выиграна! 🏆',
+          message: `Сделка «${currentDeal.title}» успешно закрыта на сумму ${(currentDeal.amount || 0).toLocaleString('ru-RU')} ₸!`,
+          type: 'deal_won',
+          priority: 'high',
+          link: `/deals/${dealId}`,
+          entity_type: 'deal',
+          entity_id: dealId,
+        });
+      } else if (stage?.is_lost) {
+        addNotification({
+          title: 'Сделка проиграна',
+          message: `Сделка «${currentDeal.title}» переведена в проигранные${lossReason ? ` (${lossReason})` : ''}`,
+          type: 'deal_lost',
+          priority: 'medium',
+          link: `/deals/${dealId}`,
+          entity_type: 'deal',
+          entity_id: dealId,
+        });
+      } else {
+        addNotification({
+          title: 'Стадия сделки изменена',
+          message: `Сделка «${currentDeal.title}» переведена на этап «${stage?.name || 'Новый этап'}»`,
+          type: 'deal_stage_changed',
+          priority: 'low',
+          link: `/deals/${dealId}`,
+          entity_type: 'deal',
+          entity_id: dealId,
+        });
+      }
+    }
+
+    setDeals(prev => prev.map(d => {
+      if (d.id !== dealId) return d;
+      return {
+        ...d,
+        stage_id: stageId,
+        pipeline_id: stage?.pipeline_id || d.pipeline_id,
+        loss_reason: lossReason || d.loss_reason,
+        updated_at: new Date().toISOString(),
+      };
+    }));
+  };
+
+  const updateDeal = (id: string, updates: Partial<Deal>) => {
+    setDeals(prev => prev.map(d => {
+      if (d.id !== id) return d;
+      let pipelineId = updates.pipeline_id || d.pipeline_id;
+      if (updates.stage_id && !updates.pipeline_id) {
+        const stage = stages.find(s => s.id === updates.stage_id);
+        if (stage?.pipeline_id) pipelineId = stage.pipeline_id;
+      }
+      return { ...d, ...updates, pipeline_id: pipelineId, updated_at: new Date().toISOString() };
+    }));
+  };
+
+  const addTask = (data: Omit<Task, 'id' | 'created_at' | 'updated_at'>): Task => {
+    const newTask: Task = {
+      ...data,
+      id: `task-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setTasks(prev => [newTask, ...prev]);
+
+    if (notificationPreferences.tasks_overdue_alerts) {
+      addNotification({
+        title: 'Новая задача запланирована',
+        message: `«${newTask.title}» добавлена в список дел`,
+        type: 'task_created',
+        priority: 'low',
+        link: '/tasks',
+        entity_type: 'task',
+        entity_id: newTask.id,
+      });
+    }
+
+    return newTask;
+  };
+
+  const toggleTaskStatus = (taskId: string) => {
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (targetTask && targetTask.status === 'pending' && notificationPreferences.tasks_overdue_alerts) {
+      addNotification({
+        title: 'Задача выполнена',
+        message: `«${targetTask.title}» успешно завершена`,
+        type: 'task_completed',
+        priority: 'low',
+        link: '/tasks',
+        entity_type: 'task',
+        entity_id: taskId,
+      });
+    }
+
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      return {
+        ...t,
+        status: t.status === 'completed' ? 'pending' : 'completed',
+        updated_at: new Date().toISOString(),
+      };
+    }));
+  };
+
+  const addQuote = (data: Omit<Quote, 'id' | 'created_at' | 'updated_at' | 'version' | 'is_archived'>): Quote => {
+    const newQuote: Quote = {
+      ...data,
+      id: `quote-${Date.now()}`,
+      version: 1,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setQuotes(prev => [newQuote, ...prev]);
+
+    // Обновляем сумму в сделке
+    if (newQuote.deal_id && newQuote.current_version?.total_amount) {
+      updateDeal(newQuote.deal_id, {
+        amount: newQuote.current_version.total_amount,
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
       });
     }
   }
 
+<<<<<<< HEAD
   setDeals(prev => prev.map(d => {
     if (d.id !== dealId) return d;
     return {
@@ -804,6 +1290,74 @@ const updateDealStage = (dealId: string, stageId: string, lossReason?: string) =
       stage_id: stageId,
       pipeline_id: stage?.pipeline_id || d.pipeline_id,
       loss_reason: lossReason || d.loss_reason,
+=======
+    if (notificationPreferences.quotes_alerts) {
+      addNotification({
+        title: 'Сформировано новое КП',
+        message: `${newQuote.quote_number} для ${newQuote.recipient_company || newQuote.recipient_name}`,
+        type: 'quote_created',
+        priority: 'medium',
+        link: '/quotes',
+        entity_type: 'quote',
+        entity_id: newQuote.id,
+      });
+    }
+
+    return newQuote;
+  };
+
+  const updateQuote = (id: string, updates: Partial<Quote>) => {
+    const currentQuote = quotes.find(q => q.id === id);
+    if (currentQuote && updates.status && currentQuote.status !== updates.status && notificationPreferences.quotes_alerts) {
+      const statusLabels: Record<string, string> = {
+        draft: 'Черновик',
+        ready: 'Готово',
+        sent: 'Отправлено клиенту',
+        accepted: 'Принято заказчиком 🎉',
+        rejected: 'Отклонено',
+        expired: 'Истекло',
+      };
+      addNotification({
+        title: `КП ${currentQuote.quote_number}: статус обновлен`,
+        message: `Новый статус: ${statusLabels[updates.status] || updates.status}`,
+        type: 'quote_status',
+        priority: updates.status === 'accepted' ? 'high' : 'low',
+        link: '/quotes',
+        entity_type: 'quote',
+        entity_id: id,
+      });
+    }
+
+    setQuotes(prev => prev.map(q => {
+      if (q.id !== id) return q;
+      const updated = { ...q, ...updates, updated_at: new Date().toISOString() };
+      if (updated.deal_id && updated.current_version?.total_amount) {
+        updateDeal(updated.deal_id, { amount: updated.current_version.total_amount });
+      }
+      return updated;
+    }));
+  };
+
+  const addCategory = (data: Omit<Category, 'id' | 'sort_order'>): Category => {
+    const newCategory: Category = {
+      ...data,
+      id: `cat-${Date.now()}`,
+      sort_order: (categories.length + 1) * 10,
+    };
+    setCategories(prev => [...prev, newCategory]);
+    return newCategory;
+  };
+
+  const addProduct = (
+    data: Omit<Product, 'id' | 'created_at' | 'updated_at'>,
+    tiers?: Omit<PriceTier, 'id' | 'price_list_id' | 'product_id'>[]
+  ): Product => {
+    const productId = `prod-${Date.now()}`;
+    const newProduct: Product = {
+      ...data,
+      id: productId,
+      created_at: new Date().toISOString(),
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
       updated_at: new Date().toISOString(),
     };
   }));
@@ -1016,6 +1570,7 @@ const resetToDefault = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
 
+<<<<<<< HEAD
 return (
   <CRMContext.Provider
     value={{
@@ -1077,6 +1632,107 @@ return (
     {children}
   </CRMContext.Provider>
 );
+=======
+    if (tiers !== undefined) {
+      setPriceTiers(prev => {
+        const otherTiers = prev.filter(t => t.product_id !== id);
+        const updatedTiers: PriceTier[] = tiers.map((t, idx) => ({
+          ...t,
+          id: `tier-${Date.now()}-${idx}`,
+          price_list_id: priceLists[0]?.id || 'pl-1',
+          product_id: id,
+        }));
+        return [...otherTiers, ...updatedTiers];
+      });
+    }
+  };
+
+  const deleteProduct = (id: string) => {
+    setProducts(prev => prev.filter(p => p.id !== id));
+    setPriceTiers(prev => prev.filter(t => t.product_id !== id));
+  };
+
+  const resetToDefault = () => {
+    setCompanies(initialCompanies);
+    setContacts(initialContacts);
+    setLeads(initialLeads);
+    setDeals(initialDeals);
+    setPipelines(initialPipelines);
+    setActivePipelineId('pipe-1');
+    setStages(initialDealStages);
+    setTasks(initialTasks);
+    setQuotes(initialQuotes);
+    setCategories(initialCategories);
+    setProducts(initialProducts);
+    setPriceTiers(initialPriceTiers);
+    setNotifications(initialNotifications);
+    setNotificationPreferences(initialNotificationPreferences);
+    setToasts([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  return (
+    <CRMContext.Provider
+      value={{
+        companies,
+        contacts,
+        leads,
+        deals,
+        pipelines,
+        activePipelineId,
+        setActivePipelineId,
+        stages,
+        tasks,
+        categories,
+        products,
+        priceLists,
+        priceTiers,
+        surchargeRules,
+        quotes,
+        settings,
+        notifications,
+        unreadNotificationsCount,
+        notificationPreferences,
+        toasts,
+        addNotification,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        clearAllNotifications,
+        updateNotificationPreferences,
+        dismissToast,
+        addPipeline,
+        updatePipeline,
+        deletePipeline,
+        addStage,
+        updateStage,
+        deleteStage,
+        reorderStages,
+        addCompany,
+        updateCompany,
+        addContact,
+        updateContact,
+        addLead,
+        updateLead,
+        convertLead,
+        addDeal,
+        updateDealStage,
+        updateDeal,
+        addTask,
+        toggleTaskStatus,
+        addQuote,
+        updateQuote,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        addCategory,
+        resetToDefault,
+      }}
+    >
+      {children}
+    </CRMContext.Provider>
+  );
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
 }
 
 export function useCRM() {

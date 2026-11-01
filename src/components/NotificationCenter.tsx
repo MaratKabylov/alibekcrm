@@ -63,11 +63,19 @@ export function NotificationCenter() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+<<<<<<< HEAD
   const urgentUnreadCount = notifications.filter(n => !n.is_read && (n.priority === 'urgent' || n.type === 'task_overdue')).length;
 
   const filteredNotifications = notifications.filter(n => {
     if (filter === 'unread') return !n.is_read;
     if (filter === 'urgent') return !n.is_read && (n.priority === 'urgent' || n.type === 'task_overdue');
+=======
+  const urgentCount = notifications.filter(n => n.priority === 'urgent' || n.type === 'task_overdue').length;
+
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'unread') return !n.is_read;
+    if (filter === 'urgent') return n.priority === 'urgent' || n.type === 'task_overdue';
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
     return true;
   });
 
@@ -210,7 +218,11 @@ export function NotificationCenter() {
               position: 'absolute',
               top: -5,
               right: -5,
+<<<<<<< HEAD
               background: urgentUnreadCount > 0 ? 'var(--rose-danger, #EF4444)' : 'var(--primary, #2563EB)',
+=======
+              background: urgentCount > 0 ? 'var(--rose-danger, #EF4444)' : 'var(--primary, #2563EB)',
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
               color: '#FFFFFF',
               fontSize: 10,
               fontWeight: 700,
@@ -222,7 +234,11 @@ export function NotificationCenter() {
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
+<<<<<<< HEAD
               animation: urgentUnreadCount > 0 ? 'pulse 1.8s infinite' : 'none'
+=======
+              animation: urgentCount > 0 ? 'pulse 1.8s infinite' : 'none'
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
             }}
           >
             {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
@@ -324,7 +340,11 @@ export function NotificationCenter() {
             {[
               { id: 'all', label: 'Все', count: notifications.length },
               { id: 'unread', label: 'Непрочитанные', count: unreadNotificationsCount },
+<<<<<<< HEAD
               { id: 'urgent', label: 'Срочные', count: urgentUnreadCount },
+=======
+              { id: 'urgent', label: 'Срочные', count: urgentCount },
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
             ].map(tab => {
               const active = filter === tab.id;
               return (
@@ -527,6 +547,7 @@ export function NotificationCenter() {
                           </span>
                         ) : <span />}
 
+<<<<<<< HEAD
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                             {!notif.is_read ? (
                               <button
@@ -563,6 +584,29 @@ export function NotificationCenter() {
                                 <span>Прочитано</span>
                           </span>
                           )}
+=======
+                        <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                          {!notif.is_read ? (
+                            <button
+                              onClick={() => markAsRead(notif.id)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                fontSize: 11,
+                              }}
+                              title="Отметить как прочитанное"
+                            >
+                              <Check size={12} />
+                              <span>Прочитано</span>
+                            </button>
+                          ) : null}
+>>>>>>> 51bd643c1d5cdcdf7831088cefd38a371d7d2def
 
                           <button
                             onClick={() => deleteNotification(notif.id)}
