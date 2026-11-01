@@ -12,7 +12,9 @@ import {
   PriceTier, 
   SurchargeRule,
   Quote,
-  CompanySettings
+  CompanySettings,
+  AppNotification,
+  NotificationPreferences
 } from '@/types/database';
 
 export const initialCategories: Category[] = [
@@ -743,3 +745,64 @@ export const initialCompanySettings: CompanySettings = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
+
+
+export const initialNotificationPreferences: NotificationPreferences = {
+  sound_enabled: true,
+  toasts_enabled: true,
+  tasks_overdue_alerts: true,
+  deals_alerts: true,
+  leads_alerts: true,
+  quotes_alerts: true,
+};
+
+export const initialNotifications: AppNotification[] = [
+  {
+    id: 'notif-1',
+    title: 'Задача просрочена',
+    message: '«Контрольный звонок по открытию кофейни Данияра» должна была быть выполнена ранее!',
+    type: 'task_overdue',
+    priority: 'urgent',
+    is_read: false,
+    link: '/tasks',
+    entity_type: 'task',
+    entity_id: 'task-3',
+    created_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 минут назад
+  },
+  {
+    id: 'notif-2',
+    title: 'Сделка успешно выиграна!',
+    message: 'Сделка «Поставка стаканов для Urban Brew» на сумму 1 850 000 ₸ переведена в статус «Выиграна».',
+    type: 'deal_won',
+    priority: 'high',
+    is_read: false,
+    link: '/deals/deal-1',
+    entity_type: 'deal',
+    entity_id: 'deal-1',
+    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 часа назад
+  },
+  {
+    id: 'notif-3',
+    title: 'Новый входящий лид',
+    message: 'Получен новый лид через Instagram: Данияр (Кофейня «Карамелька»).',
+    type: 'lead_new',
+    priority: 'medium',
+    is_read: false,
+    link: '/leads/lead-1',
+    entity_type: 'lead',
+    entity_id: 'lead-1',
+    created_at: new Date(Date.now() - 1000 * 60 * 360).toISOString(), // 6 часов назад
+  },
+  {
+    id: 'notif-4',
+    title: 'КП отправлено клиенту',
+    message: 'КП-2026-000001 успешно отправлено контактному лицу Алибеку Исмаилову.',
+    type: 'quote_status',
+    priority: 'low',
+    is_read: true,
+    link: '/quotes',
+    entity_type: 'quote',
+    entity_id: 'quote-1',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // вчера
+  },
+];

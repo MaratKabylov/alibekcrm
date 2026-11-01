@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '@/lib/store';
 import { formatCurrency } from '@/lib/calculator';
+import { NotificationCenter } from '@/components/NotificationCenter';
 
 interface HeaderProps {
   onQuickAction?: (action: 'lead' | 'deal' | 'quote' | 'company') => void;
@@ -456,36 +457,8 @@ export function Header({ onQuickAction }: HeaderProps) {
           <span>Демо ТЗ</span>
         </button>
 
-        {/* Индикатор уведомлений/задач */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <button 
-            className="btn btn-secondary" 
-            style={{ width: 36, height: 36, padding: 0, borderRadius: 'var(--radius-sm)' }}
-            title="Задачи в работе"
-          >
-            <Bell size={16} />
-          </button>
-          {pendingTasksCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              background: 'var(--primary)',
-              color: '#FFFFFF',
-              fontSize: 10,
-              fontWeight: 700,
-              borderRadius: 'var(--radius-full)',
-              width: 18,
-              height: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 1px 3px rgba(37, 99, 235, 0.4)'
-            }}>
-              {pendingTasksCount}
-            </span>
-          )}
-        </div>
+        {/* Центр уведомлений на сайте */}
+        <NotificationCenter />
 
         {/* Быстрое создание */}
         <div style={{ display: 'flex', gap: 8 }}>
